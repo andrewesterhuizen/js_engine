@@ -29,7 +29,8 @@ struct Object {
 
 struct Function : public Object {
     bool is_builtin;
-    std::function<Object*(std::vector<Object*>)> func;
+    std::function<Object*(std::vector<Object*>)> builtin_func;
+    std::shared_ptr<ast::Statement> body;
 
     bool is_truthy() override {
         return true;
@@ -107,7 +108,8 @@ class Interpreter {
     // TODO: actual function scopes
     std::unordered_map<std::string, Object*> variables;
 
-    Object* lookup_variable(std::string name);
+    Object* get_variable(std::string name);
+    Object* set_variable(std::string name, Object* value);
 
 public:
     Interpreter();

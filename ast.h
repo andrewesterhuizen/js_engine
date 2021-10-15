@@ -19,7 +19,8 @@ enum class ExpressionType {
 enum class StatementType {
     Expression,
     Block,
-    If
+    If,
+    FunctionDeclaration
 };
 
 struct Statement {
@@ -76,6 +77,20 @@ struct IfStatement : public Statement {
         j["test"] = test->to_json();
         j["consequent"] = consequent->to_json();
         j["alternative"] = alternative->to_json();
+        return j;
+    }
+};
+
+struct FunctionDeclarationStatement : public Statement {
+    std::shared_ptr<Expression> identifier;
+    std::shared_ptr<Statement> body;
+    FunctionDeclarationStatement() : Statement(StatementType::FunctionDeclaration) {}
+
+    nlohmann::json to_json() override {
+        nlohmann::json j;
+        j["type"] = "FunctionDeclarationStatement";
+        j["identifier"] = identifier->to_json();
+        j["body"] = body->to_json();
         return j;
     }
 };

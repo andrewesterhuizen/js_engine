@@ -65,6 +65,18 @@ Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
 
             return final_value;
         }
+        case ast::StatementType::FunctionDeclaration: {
+            auto s = std::static_pointer_cast<ast::FunctionDeclarationStatement>(statement);
+
+            auto name = std::static_pointer_cast<ast::IdentifierExpression>(s->identifier);
+            assert(name != nullptr);
+
+            auto func = object_manager.new_function();
+            func->is_builtin = false;
+            func->body = s->body;
+
+            return func;
+        }
     }
 
     std::cerr << "unable to execute statement type:" << statement->to_json()["type"] << "\n";
@@ -86,8 +98,11 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
                 args.push_back(execute(arg));
             }
 
-            assert(func->is_builtin);
-            return func->func(args);
+            if (func->is_builtin) {
+                return func->builtin_func(args);
+            }
+            
+            return execute(func->body);
         }
         case ast::ExpressionType::Member: {
             auto e = std::static_pointer_cast<ast::MemberExpression>(expression);
@@ -98,7 +113,7 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
             auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->expression);
             assert(right != nullptr);
 
-            auto obj = lookup_variable(left->name);
+            auto obj = get_variable(left->name);
             assert(!object_manager.is_undefined(obj));
 
             auto property = obj->get_propery(right->name);
@@ -141,7 +156,7 @@ void Interpreter::run(ast::Program &program) {
     std::cout << final_value->to_string() << "\n";
 }
 
-Object* Interpreter::lookup_variable(std::string name) {
+Object* Interpreter::get_variable(std::string name) {
     if (auto entry = variables.find(name); entry != variables.end()) {
         return entry->second;
     }
@@ -149,13 +164,17 @@ Object* Interpreter::lookup_variable(std::string name) {
     return object_manager.new_undefined();
 }
 
+Object* Interpreter::set_variable(std::string name, Object* value) {
+    variables[name] = value;
+    return value;
+}
 
 Interpreter::Interpreter() {
     auto console = object_manager.new_object();
 
     auto log = object_manager.new_function();
     log->is_builtin = true;
-    log->func = [&](std::vector<Object*> args) {
+    log->builtin_func = [&](std::vector<Object*> args) {
         std::string out;
 
         for (auto arg: args) {

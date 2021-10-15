@@ -4,50 +4,42 @@
 #include "interpreter.h"
 
 int main() {
-    // string args
-    auto its_true_string = std::make_shared<ast::StringLiteralExpression>("it's true");
-    auto its_false_string = std::make_shared<ast::StringLiteralExpression>("it's false");
+    // function declaration
+    auto console_log_member_expression = std::make_shared<ast::MemberExpression>();
+    console_log_member_expression->object = std::make_shared<ast::IdentifierExpression>("console");
+    console_log_member_expression->expression = std::make_shared<ast::IdentifierExpression>("log");
 
-    // consequent block
-    auto if_console_log_member_expr = std::make_shared<ast::MemberExpression>();
-    if_console_log_member_expr->object = std::make_shared<ast::IdentifierExpression>("console");
-    if_console_log_member_expr->expression = std::make_shared<ast::IdentifierExpression>("log");
+    auto console_log_call_expression = std::make_shared<ast::CallExpression>();
+    console_log_call_expression->callee = console_log_member_expression;
+    console_log_call_expression->arguments = std::vector<std::shared_ptr<ast::Expression>>();
+    console_log_call_expression->arguments.push_back(
+            std::make_shared<ast::StringLiteralExpression>("hello from function"));
 
-    auto if_console_log_call_expr = std::make_shared<ast::CallExpression>();
-    if_console_log_call_expr->callee = if_console_log_member_expr;
-    if_console_log_call_expr->arguments = std::vector<std::shared_ptr<ast::Expression>>();
-    if_console_log_call_expr->arguments.push_back(its_true_string);
+    auto console_log_call_expression_statement = std::make_shared<ast::ExpressionStatement>();
+    console_log_call_expression_statement->expression = console_log_call_expression;
 
-    auto if_expr_statement = std::make_shared<ast::ExpressionStatement>();
-    if_expr_statement->expression = if_console_log_call_expr;
+    auto function_body = std::make_shared<ast::BlockStatement>();
+    function_body->body.push_back(console_log_call_expression_statement);
 
-    auto if_block_statement = std::make_shared<ast::BlockStatement>();
-    if_block_statement->body.push_back(if_expr_statement);
+    auto function_declaration = std::make_shared<ast::FunctionDeclarationStatement>();
+    function_declaration->identifier = std::make_shared<ast::IdentifierExpression>("test");
+    function_declaration->body = function_body;
 
-    // alternative block
-    auto else_console_log_member_expr = std::make_shared<ast::MemberExpression>();
-    else_console_log_member_expr->object = std::make_shared<ast::IdentifierExpression>("console");
-    else_console_log_member_expr->expression = std::make_shared<ast::IdentifierExpression>("log");
 
-    auto else_console_log_call_expr = std::make_shared<ast::CallExpression>();
-    else_console_log_call_expr->callee = else_console_log_member_expr;
-    else_console_log_call_expr->arguments = std::vector<std::shared_ptr<ast::Expression>>();
-    else_console_log_call_expr->arguments.push_back(its_false_string);
+    // function call
+    auto test_func_call_expression = std::make_shared<ast::CallExpression>();
+    test_func_call_expression->callee = console_log_member_expression;
+    test_func_call_expression->arguments = std::vector<std::shared_ptr<ast::Expression>>();
+    test_func_call_expression->arguments.push_back(
+            std::make_shared<ast::StringLiteralExpression>("hello from function"));
 
-    auto else_expr_statement = std::make_shared<ast::ExpressionStatement>();
-    else_expr_statement->expression = else_console_log_call_expr;
+    auto test_func_call_expression_statement = std::make_shared<ast::ExpressionStatement>();
+    test_func_call_expression_statement->expression = test_func_call_expression;
 
-    auto else_block_statement = std::make_shared<ast::BlockStatement>();
-    else_block_statement->body.push_back(else_expr_statement);
-
-    // if statement
-    auto if_statement = std::make_shared<ast::IfStatement>();
-    if_statement->test = std::make_shared<ast::BooleanLiteralExpression>("truthy string");
-    if_statement->consequent = if_expr_statement;
-    if_statement->alternative = else_expr_statement;
-
+    // program
     ast::Program program;
-    program.body.push_back(if_statement);
+    program.body.push_back(function_declaration);
+    program.body.push_back(test_func_call_expression_statement);
 
     std::cout << program.to_json().dump(4) << "\n";
 
