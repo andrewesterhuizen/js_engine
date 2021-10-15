@@ -20,7 +20,8 @@ enum class StatementType {
     Expression,
     Block,
     If,
-    FunctionDeclaration
+    FunctionDeclaration,
+    VariableDeclaration
 };
 
 struct Statement {
@@ -91,6 +92,21 @@ struct FunctionDeclarationStatement : public Statement {
         j["type"] = "FunctionDeclarationStatement";
         j["identifier"] = identifier->to_json();
         j["body"] = body->to_json();
+        return j;
+    }
+};
+
+struct VariableDeclarationStatement : public Statement {
+    std::shared_ptr<Expression> identifier;
+    std::shared_ptr<Expression> value;
+
+    VariableDeclarationStatement() : Statement(StatementType::VariableDeclaration) {}
+
+    nlohmann::json to_json() override {
+        nlohmann::json j;
+        j["type"] = "VariableDeclarationStatement";
+        j["identifier"] = identifier->to_json();
+        j["value"] = value->to_json();
         return j;
     }
 };

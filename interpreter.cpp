@@ -75,7 +75,19 @@ Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
             func->is_builtin = false;
             func->body = s->body;
 
-            return func;
+            return set_variable(name->name, func);
+        }
+        case ast::StatementType::VariableDeclaration: {
+            // TODO: variable declarations need to run earlier to allow hoisting
+
+            auto s = std::static_pointer_cast<ast::VariableDeclarationStatement>(statement);
+
+            auto name = std::static_pointer_cast<ast::IdentifierExpression>(s->identifier);
+            assert(name != nullptr);
+
+            auto value = execute(s->value);
+
+            return set_variable(name->name, value);
         }
     }
 
@@ -126,7 +138,7 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
         }
         case ast::ExpressionType::Identifier: {
             auto e = std::static_pointer_cast<ast::IdentifierExpression>(expression);
-            return object_manager.new_undefined();
+            return get_variable(e->name);
         }
         case ast::ExpressionType::NumberLiteral: {
             auto e = std::static_pointer_cast<ast::NumberLiteralExpression>(expression);
