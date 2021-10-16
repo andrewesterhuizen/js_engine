@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "interpreter.h"
 #include "lexer.h"
+#include "parser.h"
 
 int main() {
     std::string source = R"(
@@ -12,9 +13,11 @@ int main() {
         console.log(message);
     )";
 
+    // get tokens
     lexer::Lexer l;
     auto tokens = l.get_tokens(source);
 
+    // print tokens
     nlohmann::json j;
     std::vector<nlohmann::json> out;
     for (auto t: tokens) {
@@ -22,8 +25,16 @@ int main() {
     }
 
     j = out;
-
     std::cout << j.dump(4) << "\n";
+
+    // parse tokens
+    parser::Parser p;
+    auto ast = p.parse(tokens);
+    std::cout << ast.to_json().dump(4) << "\n";
+
+    // execute ast
+    interpreter::Interpreter i;
+    i.run(ast);
 
     return 0;
 }
