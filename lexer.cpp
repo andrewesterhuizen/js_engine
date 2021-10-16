@@ -14,6 +14,8 @@ std::string token_type_to_string(TokenType type) {
             return "Number";
         case TokenType::Equals:
             return "Equals";
+        case TokenType::Plus:
+            return "Plus";
         case TokenType::Semicolon:
             return "Semicolon";
         case TokenType::LeftParen:

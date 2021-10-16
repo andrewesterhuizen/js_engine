@@ -7,8 +7,23 @@
 
 namespace interpreter {
 
+enum class ObjectType {
+    Undefined,
+    Object,
+    Function,
+    Number,
+    String,
+    Boolean
+};
+
 struct Object {
+    Object(ObjectType object_type) : object_type(object_type) {}
+    ObjectType object_type = ObjectType::Object;
     std::unordered_map<std::string, Object*> properties;
+
+    ObjectType type() {
+        return object_type;
+    }
 
     virtual bool is_truthy() {
         return true;
@@ -28,6 +43,7 @@ struct Object {
 };
 
 struct Function : public Object {
+    Function() : Object(ObjectType::Function) {}
     bool is_builtin;
     std::function<Object*(std::vector<Object*>)> builtin_func;
     std::shared_ptr<ast::Statement> body;
@@ -42,6 +58,7 @@ struct Function : public Object {
 };
 
 struct Undefined : public Object {
+    Undefined() : Object(ObjectType::Undefined) {}
     bool is_truthy() override {
         return false;
     }
@@ -52,7 +69,7 @@ struct Undefined : public Object {
 };
 
 struct Number : public Object {
-    Number(double value) : value(value) {};
+    Number(double value) : Object(ObjectType::Number), value(value) {};
     double value;
 
     bool is_truthy() override {
@@ -65,7 +82,7 @@ struct Number : public Object {
 };
 
 struct String : public Object {
-    String(std::string value) : value(value) {};
+    String(std::string value) : Object(ObjectType::String), value(value) {};
     std::string value;
 
     bool is_truthy() override {
@@ -78,7 +95,7 @@ struct String : public Object {
 };
 
 struct Boolean : public Object {
-    Boolean(bool value) : value(value) {};
+    Boolean(bool value) : Object(ObjectType::Boolean), value(value) {};
     bool value;
 
     bool is_truthy() override {

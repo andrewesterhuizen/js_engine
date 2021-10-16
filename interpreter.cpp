@@ -10,7 +10,7 @@ bool ObjectManager::is_undefined(Object* value) {
 
 Object* ObjectManager::new_object() {
     // just leak for now
-    return new Object();
+    return new Object(ObjectType::Object);
 }
 
 Function* ObjectManager::new_function() {
@@ -151,6 +151,31 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
         case ast::ExpressionType::BooleanLiteral: {
             auto e = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression);
             return object_manager.new_boolean(e->value);
+        }
+        case ast::ExpressionType::Binary: {
+            auto e = std::static_pointer_cast<ast::BinaryExpression>(expression);
+            assert(e->op == ast::Operator::Plus);
+
+            auto right_result = execute(e->right);
+            auto left_result = execute(e->left);
+
+            switch (left_result->type()) {
+                case ObjectType::Number: {
+                    auto left = static_cast<Number*>(left_result);
+                    assert(right_result->type() == ObjectType::Number);
+                    auto right = static_cast<Number*>(right_result);
+
+                    switch(e->op) {
+                        case ast::Operator::Plus: {
+                            return object_manager.new_number(left->value + right->value);
+                        }
+                    }
+
+                    assert(false);
+                }
+                default:
+                    assert(false);
+            }
         }
     }
 

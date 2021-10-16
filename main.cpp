@@ -9,8 +9,8 @@
 
 int main() {
     std::string source = R"(
-        var message = "Hello";
-        console.log(message);
+        var x = 1 + 2 + 3 + 4;
+        console.log(x);
     )";
 
     // get tokens

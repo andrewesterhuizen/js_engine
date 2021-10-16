@@ -3,9 +3,17 @@
 #include <string>
 #include <vector>
 
+#include "lexer.h"
 #include "json.hpp"
 
 namespace ast {
+
+enum class Operator {
+    Plus
+};
+
+Operator token_type_to_operator(lexer::TokenType token_type);
+std::string operator_to_string(Operator op);
 
 enum class ExpressionType {
     Call,
@@ -13,7 +21,8 @@ enum class ExpressionType {
     Identifier,
     NumberLiteral,
     StringLiteral,
-    BooleanLiteral
+    BooleanLiteral,
+    Binary
 };
 
 enum class StatementType {
@@ -57,7 +66,7 @@ struct BlockStatement : public Statement {
         j["type"] = "BlockStatement";
 
         std::vector<nlohmann::json> statements;
-        for(auto s : body) {
+        for (auto s: body) {
             statements.push_back(s->to_json());
         }
         j["body"] = statements;
@@ -194,6 +203,22 @@ struct BooleanLiteralExpression : public Expression {
     }
 };
 
+struct BinaryExpression : public Expression {
+    BinaryExpression(std::shared_ptr<Expression> left, std::shared_ptr<Expression> right, Operator op)
+            : Expression(ExpressionType::Binary), left(left), right(right), op(op) {}
+    std::shared_ptr<Expression> left;
+    std::shared_ptr<Expression> right;
+    Operator op;
+
+    nlohmann::json to_json() override {
+        nlohmann::json j;
+        j["type"] = "BinaryExpression";
+        j["left"] = left->to_json();
+        j["left"] = right->to_json();
+        j["op"] = operator_to_string(op);
+        return j;
+    }
+};
 
 struct Program {
     std::vector<std::shared_ptr<Statement>> body;
@@ -204,7 +229,7 @@ struct Program {
         j["type"] = "Program";
 
         std::vector<nlohmann::json> statements;
-        for(auto s : body) {
+        for (auto s: body) {
             statements.push_back(s->to_json());
         }
         j["body"] = statements;

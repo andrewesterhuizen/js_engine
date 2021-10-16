@@ -32,7 +32,11 @@ class Parser {
         auto t = tokens[++index];
 
         if (t.type != type) {
-            unexpected_token();
+            std::cerr << "unexpected token: expected "
+                      << lexer::token_type_to_string(type)
+                      << " and got "
+                      << lexer::token_type_to_string(t.type)
+                      << "\n";
             assert(false);
         }
 
@@ -48,6 +52,23 @@ class Parser {
         auto t = tokens[index];
 
         switch (t.type) {
+            case lexer::TokenType::Number: {
+                auto left = std::make_shared<ast::NumberLiteralExpression>(std::stod(t.value));
+
+                auto next = next_token();
+                if (next.type == lexer::TokenType::Semicolon || next.type == lexer::TokenType::RightParen) {
+                    backup();
+                    return left;
+                }
+
+                assert(next.type == lexer::TokenType::Plus);
+                auto op = ast::token_type_to_operator(lexer::TokenType::Plus);
+
+                next_token();
+                auto right = parse_expression();
+
+                return std::make_shared<ast::BinaryExpression>(left, right, op);
+            }
             case lexer::TokenType::Identifier: {
                 auto left = std::make_shared<ast::IdentifierExpression>(t.value);
 
@@ -103,14 +124,13 @@ class Parser {
                 auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
                 expect_next_token(lexer::TokenType::Equals);
 
-                auto value_token = next_token();
-                assert(value_token.type == lexer::TokenType::String);
+                next_token();
+                auto value = parse_expression();
 
-                // this will break when an expression is assigned to a variable
                 expect_next_token(lexer::TokenType::Semicolon);
 
                 s->identifier = std::make_shared<ast::IdentifierExpression>(identifier_token.value);
-                s->value = std::make_shared<ast::StringLiteralExpression>(value_token.value);
+                s->value = value;
 
                 return s;
             }
