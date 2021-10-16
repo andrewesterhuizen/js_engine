@@ -13,15 +13,19 @@ class Parser {
     std::vector<lexer::Token> tokens;
 
     lexer::Token next_token() {
-        if(tokens[index].type == lexer::TokenType::EndOfFile) {
+        if (tokens[index].type == lexer::TokenType::EndOfFile) {
             return tokens[index];
         }
 
         return tokens[++index];
     }
 
+    void backup() {
+        index--;
+    }
+
     lexer::Token expect_next_token(lexer::TokenType type) {
-        if(tokens[index].type == lexer::TokenType::EndOfFile) {
+        if (tokens[index].type == lexer::TokenType::EndOfFile) {
             return tokens[index];
         }
 
@@ -48,7 +52,8 @@ class Parser {
                 auto left = std::make_shared<ast::IdentifierExpression>(t.value);
 
                 auto next = next_token();
-                if (next.type == lexer::TokenType::Semicolon) {
+                if (next.type == lexer::TokenType::Semicolon || next.type == lexer::TokenType::RightParen) {
+                    backup();
                     return left;
                 }
 
@@ -67,15 +72,14 @@ class Parser {
                 }
 
                 assert(next.type == lexer::TokenType::LeftParen);
-                auto arg_token = next_token();
-                assert(arg_token.type == lexer::TokenType::Identifier);
-
+                next_token();
+                auto arg = parse_expression();
                 next = next_token();
                 assert(next.type == lexer::TokenType::RightParen);
 
                 auto call_expression = std::make_shared<ast::CallExpression>();
                 call_expression->callee = member_expression;
-                call_expression->arguments.push_back(std::make_shared<ast::IdentifierExpression>(arg_token.value));
+                call_expression->arguments.push_back(arg);
 
                 expect_next_token(lexer::TokenType::Semicolon);
 
