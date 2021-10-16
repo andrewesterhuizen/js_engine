@@ -92,21 +92,21 @@ struct IfStatement : public Statement {
 };
 
 struct FunctionDeclarationStatement : public Statement {
-    std::shared_ptr<Expression> identifier;
+    std::string identifier;
     std::shared_ptr<Statement> body;
     FunctionDeclarationStatement() : Statement(StatementType::FunctionDeclaration) {}
 
     nlohmann::json to_json() override {
         nlohmann::json j;
         j["type"] = "FunctionDeclarationStatement";
-        j["identifier"] = identifier->to_json();
+        j["identifier"] = identifier;
         j["body"] = body->to_json();
         return j;
     }
 };
 
 struct VariableDeclarationStatement : public Statement {
-    std::shared_ptr<Expression> identifier;
+    std::string identifier;
     std::shared_ptr<Expression> value;
 
     VariableDeclarationStatement() : Statement(StatementType::VariableDeclaration) {}
@@ -114,7 +114,7 @@ struct VariableDeclarationStatement : public Statement {
     nlohmann::json to_json() override {
         nlohmann::json j;
         j["type"] = "VariableDeclarationStatement";
-        j["identifier"] = identifier->to_json();
+        j["identifier"] = identifier;
         j["value"] = value->to_json();
         return j;
     }

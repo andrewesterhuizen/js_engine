@@ -56,7 +56,7 @@ class Lexer {
             {'}',  TokenType::RightBrace},
             {'.',  TokenType::Dot},
     };
-    std::unordered_set<std::string> keywords = {"var", "if", "else"};
+    std::unordered_set<std::string> keywords = {"var", "if", "else", "function"};
 
     void emit_token(TokenType type, std::string value) {
         tokens.push_back(Token{type, value});

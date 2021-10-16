@@ -68,26 +68,16 @@ Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
         case ast::StatementType::FunctionDeclaration: {
             auto s = std::static_pointer_cast<ast::FunctionDeclarationStatement>(statement);
 
-            auto name = std::static_pointer_cast<ast::IdentifierExpression>(s->identifier);
-            assert(name != nullptr);
-
             auto func = object_manager.new_function();
             func->is_builtin = false;
             func->body = s->body;
 
-            return set_variable(name->name, func);
+            return set_variable(s->identifier, func);
         }
         case ast::StatementType::VariableDeclaration: {
             // TODO: variable declarations need to run earlier to allow hoisting
-
             auto s = std::static_pointer_cast<ast::VariableDeclarationStatement>(statement);
-
-            auto name = std::static_pointer_cast<ast::IdentifierExpression>(s->identifier);
-            assert(name != nullptr);
-
-            auto value = execute(s->value);
-
-            return set_variable(name->name, value);
+            return set_variable(s->identifier, execute(s->value));
         }
     }
 
@@ -101,8 +91,8 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
             auto e = std::static_pointer_cast<ast::CallExpression>(expression);
 
             auto func_obj = execute(e->callee);
+            assert(func_obj->type() == ObjectType::Function);
             auto func = static_cast<Function*>(func_obj);
-            assert(func != nullptr);
 
             std::vector<Object*> args;
 

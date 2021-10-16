@@ -9,11 +9,11 @@
 
 int main() {
     std::string source = R"(
-        if(0) {
-            console.log("it's true");
-        } else {
-            console.log("it's false");
+        function test() {
+            console.log("hello from function");
         }
+
+        test();
     )";
 
     // get tokens
