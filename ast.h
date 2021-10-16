@@ -46,19 +46,23 @@ struct Expression {
 };
 
 struct ExpressionStatement : public Statement {
-    ExpressionStatement() : Statement(StatementType::Expression) {}
+    ExpressionStatement(std::shared_ptr<Expression> expression)
+            : Statement(StatementType::Expression), expression(expression) {}
     std::shared_ptr<Expression> expression;
     nlohmann::json to_json() override;
 };
 
 struct BlockStatement : public Statement {
-    BlockStatement() : Statement(StatementType::Block) {}
+    BlockStatement(std::vector<std::shared_ptr<Statement>> body)
+            : Statement(StatementType::Block), body(body) {}
     std::vector<std::shared_ptr<Statement>> body;
     nlohmann::json to_json() override;
 };
 
 struct IfStatement : public Statement {
-    IfStatement() : Statement(StatementType::If) {}
+    IfStatement(std::shared_ptr<Expression> test, std::shared_ptr<Statement> consequent,
+                std::shared_ptr<Statement> alternative)
+            : Statement(StatementType::If), test(test), consequent(consequent), alternative(alternative) {}
     std::shared_ptr<Expression> test;
     std::shared_ptr<Statement> consequent;
     std::shared_ptr<Statement> alternative;
@@ -66,28 +70,32 @@ struct IfStatement : public Statement {
 };
 
 struct FunctionDeclarationStatement : public Statement {
-    FunctionDeclarationStatement() : Statement(StatementType::FunctionDeclaration) {}
+    FunctionDeclarationStatement(std::string identifier, std::shared_ptr<Statement> body)
+            : Statement(StatementType::FunctionDeclaration), identifier(identifier), body(body) {}
     std::string identifier;
     std::shared_ptr<Statement> body;
     nlohmann::json to_json() override;
 };
 
 struct VariableDeclarationStatement : public Statement {
-    VariableDeclarationStatement() : Statement(StatementType::VariableDeclaration) {}
+    VariableDeclarationStatement(std::string identifier, std::shared_ptr<Expression> value)
+            : Statement(StatementType::VariableDeclaration), identifier(identifier), value(value) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
     nlohmann::json to_json() override;
 };
 
 struct CallExpression : public Expression {
-    CallExpression() : Expression(ExpressionType::Call) {}
+    CallExpression(std::shared_ptr<Expression> callee)
+            : Expression(ExpressionType::Call), callee(callee) {}
     std::shared_ptr<Expression> callee;
     std::vector<std::shared_ptr<Expression>> arguments;
     nlohmann::json to_json() override;
 };
 
 struct MemberExpression : public Expression {
-    MemberExpression() : Expression(ExpressionType::Member) {}
+    MemberExpression(std::shared_ptr<Expression> object, std::shared_ptr<Expression> property) :
+            Expression(ExpressionType::Member), object(object), property(property) {}
     std::shared_ptr<Expression> object;
     std::shared_ptr<Expression> property;
     nlohmann::json to_json() override;
