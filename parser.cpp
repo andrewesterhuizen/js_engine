@@ -87,6 +87,14 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
                 return left;
             }
 
+            if (next.type == lexer::TokenType::Equals) {
+                next_token();
+                auto right = parse_expression();
+                auto ae = std::make_shared<ast::AssignmentExpression>(left, right, ast::Operator::Equals);
+                expect_next_token(lexer::TokenType::Semicolon);
+                return ae;
+            }
+
             std::shared_ptr<ast::Expression> callee = left;
 
             if (next.type == lexer::TokenType::Dot) {

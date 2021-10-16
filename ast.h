@@ -9,7 +9,8 @@
 namespace ast {
 
 enum class Operator {
-    Plus
+    Plus,
+    Equals
 };
 
 Operator token_type_to_operator(lexer::TokenType token_type);
@@ -22,7 +23,8 @@ enum class ExpressionType {
     NumberLiteral,
     StringLiteral,
     BooleanLiteral,
-    Binary
+    Binary,
+    Assignment
 };
 
 enum class StatementType {
@@ -128,6 +130,15 @@ struct BooleanLiteralExpression : public Expression {
 struct BinaryExpression : public Expression {
     BinaryExpression(std::shared_ptr<Expression> left, std::shared_ptr<Expression> right, Operator op)
             : Expression(ExpressionType::Binary), left(left), right(right), op(op) {}
+    std::shared_ptr<Expression> left;
+    std::shared_ptr<Expression> right;
+    Operator op;
+    nlohmann::json to_json() override;
+};
+
+struct AssignmentExpression : public Expression {
+    AssignmentExpression(std::shared_ptr<Expression> left, std::shared_ptr<Expression> right, Operator op)
+            : Expression(ExpressionType::Assignment), left(left), right(right), op(op) {}
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
     Operator op;

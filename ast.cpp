@@ -8,6 +8,8 @@ std::string operator_to_string(Operator op) {
     switch (op) {
         case Operator::Plus:
             return "+";
+        case Operator::Equals:
+            return "=";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -18,6 +20,8 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
     switch (token_type) {
         case lexer::TokenType::Plus:
             return Operator::Plus;
+        case lexer::TokenType::Equals:
+            return Operator::Equals;
         default:
             std::cerr << "missing case for TokenType in token_type_to_operator";
             assert(false);
@@ -123,6 +127,15 @@ nlohmann::json BooleanLiteralExpression::to_json() {
 nlohmann::json BinaryExpression::to_json() {
     nlohmann::json j;
     j["type"] = "BinaryExpression";
+    j["left"] = left->to_json();
+    j["left"] = right->to_json();
+    j["op"] = operator_to_string(op);
+    return j;
+}
+
+nlohmann::json AssignmentExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "AssignmentExpression";
     j["left"] = left->to_json();
     j["left"] = right->to_json();
     j["op"] = operator_to_string(op);

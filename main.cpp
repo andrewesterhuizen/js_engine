@@ -9,20 +9,10 @@
 
 int main() {
     std::string source = R"(
-        function test() {
-            var inside = "inside the declaration";
-
-            console.log("outer");
-
-            function test2() {
-                console.log("inner");
-                console.log(inside);
-            }
-
-            test2();
-        }
-
-        test();
+        var i = 1;
+        console.log(i);
+        i = 2;
+        console.log(i);
     )";
 
     // get tokens

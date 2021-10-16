@@ -24,10 +24,14 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
         }
         case ast::StatementType::Block: {
             auto s = std::static_pointer_cast<ast::BlockStatement>(statement);
-            object::Object* final_value;
+            object::Object* final_value = nullptr;
 
             for (auto s: s->body) {
                 final_value = execute(s);
+            }
+
+            if (final_value == nullptr) {
+                return object_manager.new_undefined();
             }
 
             return final_value;
@@ -39,12 +43,12 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             func->is_builtin = false;
             func->body = s->body;
 
-            return set_variable(s->identifier, func);
+            return declare_variable(s->identifier, func);
         }
         case ast::StatementType::VariableDeclaration: {
             // TODO: variable declarations need to run earlier to allow hoisting
             auto s = std::static_pointer_cast<ast::VariableDeclarationStatement>(statement);
-            return set_variable(s->identifier, execute(s->value));
+            return declare_variable(s->identifier, execute(s->value));
         }
     }
 
@@ -98,6 +102,18 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
             return object_manager.new_undefined();
         }
+        case ast::ExpressionType::Assignment: {
+            auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
+            assert(e->op == ast::Operator::Equals);
+
+            assert(e->left->type == ast::ExpressionType::Identifier);
+            auto id_expression = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
+
+            auto right_result = execute(e->right);
+
+            return set_variable(id_expression->name, right_result);
+
+        }
         case ast::ExpressionType::Identifier: {
             auto e = std::static_pointer_cast<ast::IdentifierExpression>(expression);
             return get_variable(e->name);
@@ -130,6 +146,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     switch (e->op) {
                         case ast::Operator::Plus: {
                             return object_manager.new_number(left->value + right->value);
+                        }
+                        case ast::Operator::Equals: {
+                            assert(false);
                         }
                     }
 
@@ -192,9 +211,21 @@ object::Object* Interpreter::get_variable(std::string name) {
     }
 
     throw_error("ReferenceError", name + " is not defined");
+    assert(false);
+}
+
+object::Object* Interpreter::declare_variable(std::string name, object::Object* value) {
+    return current_scope()->set_variable(name, value);
 }
 
 object::Object* Interpreter::set_variable(std::string name, object::Object* value) {
+    auto var = current_scope()->get_variable(name);
+
+    // undeclared so set in top level scope, closest thing we have to "global" right now
+    if (var == nullptr) {
+        return scopes[0].set_variable(name, value);
+    }
+
     return current_scope()->set_variable(name, value);
 }
 
