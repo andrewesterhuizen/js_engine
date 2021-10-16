@@ -46,161 +46,75 @@ struct Expression {
 };
 
 struct ExpressionStatement : public Statement {
-    std::shared_ptr<Expression> expression;
     ExpressionStatement() : Statement(StatementType::Expression) {}
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "ExpressionStatement";
-        j["expression"] = expression->to_json();
-        return j;
-    }
+    std::shared_ptr<Expression> expression;
+    nlohmann::json to_json() override;
 };
 
 struct BlockStatement : public Statement {
-    std::vector<std::shared_ptr<Statement>> body;
     BlockStatement() : Statement(StatementType::Block) {}
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "BlockStatement";
-
-        std::vector<nlohmann::json> statements;
-        for (auto s: body) {
-            statements.push_back(s->to_json());
-        }
-        j["body"] = statements;
-
-        return j;
-    }
+    std::vector<std::shared_ptr<Statement>> body;
+    nlohmann::json to_json() override;
 };
 
 struct IfStatement : public Statement {
+    IfStatement() : Statement(StatementType::If) {}
     std::shared_ptr<Expression> test;
     std::shared_ptr<Statement> consequent;
     std::shared_ptr<Statement> alternative;
-    IfStatement() : Statement(StatementType::If) {}
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "IfStatement";
-        j["test"] = test->to_json();
-        j["consequent"] = consequent->to_json();
-        j["alternative"] = alternative->to_json();
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct FunctionDeclarationStatement : public Statement {
+    FunctionDeclarationStatement() : Statement(StatementType::FunctionDeclaration) {}
     std::string identifier;
     std::shared_ptr<Statement> body;
-    FunctionDeclarationStatement() : Statement(StatementType::FunctionDeclaration) {}
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "FunctionDeclarationStatement";
-        j["identifier"] = identifier;
-        j["body"] = body->to_json();
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct VariableDeclarationStatement : public Statement {
+    VariableDeclarationStatement() : Statement(StatementType::VariableDeclaration) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
-
-    VariableDeclarationStatement() : Statement(StatementType::VariableDeclaration) {}
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "VariableDeclarationStatement";
-        j["identifier"] = identifier;
-        j["value"] = value->to_json();
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct CallExpression : public Expression {
     CallExpression() : Expression(ExpressionType::Call) {}
     std::shared_ptr<Expression> callee;
     std::vector<std::shared_ptr<Expression>> arguments;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "CallExpression";
-        j["callee"] = callee->to_json();
-
-        std::vector<nlohmann::json> args;
-
-        for (auto arg: arguments) {
-            args.push_back(arg->to_json());
-        }
-
-        j["expression"] = args;
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct MemberExpression : public Expression {
     MemberExpression() : Expression(ExpressionType::Member) {}
     std::shared_ptr<Expression> object;
     std::shared_ptr<Expression> property;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "MemberExpression";
-        j["object"] = object->to_json();
-        j["property"] = property->to_json();
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct IdentifierExpression : public Expression {
     IdentifierExpression(std::string name) : Expression(ExpressionType::Identifier), name(name) {}
     std::string name;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "IdentifierExpression";
-        j["name"] = name;
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct NumberLiteralExpression : public Expression {
     NumberLiteralExpression(double value) : Expression(ExpressionType::NumberLiteral), value(value) {}
     double value;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "NumberLiteralExpression";
-        j["value"] = value;
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct StringLiteralExpression : public Expression {
     StringLiteralExpression(std::string value) : Expression(ExpressionType::StringLiteral), value(value) {}
     std::string value;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "StringLiteralExpression";
-        j["value"] = value;
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct BooleanLiteralExpression : public Expression {
     BooleanLiteralExpression(bool value) : Expression(ExpressionType::BooleanLiteral), value(value) {}
     bool value;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "BooleanLiteralExpression";
-        j["value"] = value;
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct BinaryExpression : public Expression {
@@ -209,33 +123,12 @@ struct BinaryExpression : public Expression {
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
     Operator op;
-
-    nlohmann::json to_json() override {
-        nlohmann::json j;
-        j["type"] = "BinaryExpression";
-        j["left"] = left->to_json();
-        j["left"] = right->to_json();
-        j["op"] = operator_to_string(op);
-        return j;
-    }
+    nlohmann::json to_json() override;
 };
 
 struct Program {
     std::vector<std::shared_ptr<Statement>> body;
-
-    nlohmann::json to_json() {
-
-        nlohmann::json j;
-        j["type"] = "Program";
-
-        std::vector<nlohmann::json> statements;
-        for (auto s: body) {
-            statements.push_back(s->to_json());
-        }
-        j["body"] = statements;
-
-        return j;
-    }
+    nlohmann::json to_json();
 };
 
 }

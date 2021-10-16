@@ -4,40 +4,7 @@
 
 namespace interpreter {
 
-bool ObjectManager::is_undefined(Object* value) {
-    return value == &undefined;
-}
-
-Object* ObjectManager::new_object() {
-    // just leak for now
-    return new Object(ObjectType::Object);
-}
-
-Function* ObjectManager::new_function() {
-    // just leak for now
-    return new Function();
-}
-
-Number* ObjectManager::new_number(double value) {
-    // just leak for now
-    return new Number(value);
-}
-
-String* ObjectManager::new_string(std::string value) {
-    // just leak for now
-    return new String(value);
-}
-
-Boolean* ObjectManager::new_boolean(bool value) {
-    // just leak for now
-    return new Boolean(value);
-}
-
-Undefined* ObjectManager::new_undefined() {
-    return &undefined;
-}
-
-Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
+object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
     switch (statement->type) {
         case ast::StatementType::Expression: {
             auto s = std::static_pointer_cast<ast::ExpressionStatement>(statement);
@@ -57,7 +24,7 @@ Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
         }
         case ast::StatementType::Block: {
             auto s = std::static_pointer_cast<ast::BlockStatement>(statement);
-            Object* final_value;
+            object::Object* final_value;
 
             for (auto s: s->body) {
                 final_value = execute(s);
@@ -85,16 +52,16 @@ Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
     assert(false);
 }
 
-Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
+object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
     switch (expression->type) {
         case ast::ExpressionType::Call: {
             auto e = std::static_pointer_cast<ast::CallExpression>(expression);
 
             auto func_obj = execute(e->callee);
-            assert(func_obj->type() == ObjectType::Function);
-            auto func = static_cast<Function*>(func_obj);
+            assert(func_obj->type() == object::ObjectType::Function);
+            auto func = static_cast<object::Function*>(func_obj);
 
-            std::vector<Object*> args;
+            std::vector<object::Object*> args;
 
             for (auto arg: e->arguments) {
                 args.push_back(execute(arg));
@@ -150,10 +117,10 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
             auto left_result = execute(e->left);
 
             switch (left_result->type()) {
-                case ObjectType::Number: {
-                    auto left = static_cast<Number*>(left_result);
-                    assert(right_result->type() == ObjectType::Number);
-                    auto right = static_cast<Number*>(right_result);
+                case object::ObjectType::Number: {
+                    auto left = static_cast<object::Number*>(left_result);
+                    assert(right_result->type() == object::ObjectType::Number);
+                    auto right = static_cast<object::Number*>(right_result);
 
                     switch(e->op) {
                         case ast::Operator::Plus: {
@@ -174,7 +141,7 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
 }
 
 void Interpreter::run(ast::Program &program) {
-    Object* final_value;
+    object::Object* final_value;
 
     for (auto s: program.body) {
         final_value = execute(s);
@@ -183,7 +150,7 @@ void Interpreter::run(ast::Program &program) {
     std::cout << final_value->to_string() << "\n";
 }
 
-Object* Interpreter::get_variable(std::string name) {
+object::Object* Interpreter::get_variable(std::string name) {
     if (auto entry = variables.find(name); entry != variables.end()) {
         return entry->second;
     }
@@ -191,7 +158,7 @@ Object* Interpreter::get_variable(std::string name) {
     return object_manager.new_undefined();
 }
 
-Object* Interpreter::set_variable(std::string name, Object* value) {
+object::Object* Interpreter::set_variable(std::string name, object::Object* value) {
     variables[name] = value;
     return value;
 }
@@ -201,7 +168,7 @@ Interpreter::Interpreter() {
 
     auto log = object_manager.new_function();
     log->is_builtin = true;
-    log->builtin_func = [&](std::vector<Object*> args) {
+    log->builtin_func = [&](std::vector<object::Object*> args) {
         std::string out;
 
         for (auto arg: args) {
