@@ -135,13 +135,13 @@ struct CallExpression : public Expression {
 struct MemberExpression : public Expression {
     MemberExpression() : Expression(ExpressionType::Member) {}
     std::shared_ptr<Expression> object;
-    std::shared_ptr<Expression> expression;
+    std::shared_ptr<Expression> property;
 
     nlohmann::json to_json() override {
         nlohmann::json j;
         j["type"] = "MemberExpression";
         j["object"] = object->to_json();
-        j["expression"] = expression->to_json();
+        j["property"] = property->to_json();
         return j;
     }
 };

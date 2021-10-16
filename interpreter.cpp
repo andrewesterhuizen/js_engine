@@ -122,7 +122,7 @@ Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
             auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->object);
             assert(left != nullptr);
 
-            auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->expression);
+            auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->property);
             assert(right != nullptr);
 
             auto obj = get_variable(left->name);
