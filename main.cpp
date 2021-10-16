@@ -10,7 +10,16 @@
 int main() {
     std::string source = R"(
         function test() {
-            console.log("hello from function");
+            var inside = "inside the declaration";
+
+            console.log("outer");
+
+            function test2() {
+                console.log("inner");
+                console.log(inside);
+            }
+
+            test2();
         }
 
         test();

@@ -70,8 +70,14 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             if (func->is_builtin) {
                 return func->builtin_func(args);
             }
-            
-            return execute(func->body);
+
+            push_scope();
+
+            auto return_value = execute(func->body);
+
+            pop_scope();
+
+            return return_value;
         }
         case ast::ExpressionType::Member: {
             auto e = std::static_pointer_cast<ast::MemberExpression>(expression);
@@ -83,7 +89,6 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             assert(right != nullptr);
 
             auto obj = get_variable(left->name);
-            assert(!object_manager.is_undefined(obj));
 
             auto property = obj->get_propery(right->name);
 
@@ -122,7 +127,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     assert(right_result->type() == object::ObjectType::Number);
                     auto right = static_cast<object::Number*>(right_result);
 
-                    switch(e->op) {
+                    switch (e->op) {
                         case ast::Operator::Plus: {
                             return object_manager.new_number(left->value + right->value);
                         }
@@ -140,30 +145,63 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
     assert(false);
 }
 
+void Interpreter::throw_error(std::string type, std::string message) {
+    throw Error{type, message};
+}
+
 void Interpreter::run(ast::Program &program) {
     object::Object* final_value;
 
-    for (auto s: program.body) {
-        final_value = execute(s);
+    // TODO: there is probably a way to do this without exceptions but this is quick and easy
+    try {
+        for (auto s: program.body) {
+            final_value = execute(s);
+        }
+    } catch (Error error) {
+        std::cerr << error.type << ": " << error.message;
+        return;
     }
 
     std::cout << final_value->to_string() << "\n";
 }
 
+Scope* Interpreter::current_scope() {
+    return &scopes[current_scope_index];
+}
+
+void Interpreter::push_scope() {
+    scopes.push_back(Scope{});
+    current_scope_index++;
+}
+
+void Interpreter::pop_scope() {
+    scopes.pop_back();
+    current_scope_index--;
+}
+
 object::Object* Interpreter::get_variable(std::string name) {
-    if (auto entry = variables.find(name); entry != variables.end()) {
-        return entry->second;
+    auto i = current_scope_index;
+
+    while (i >= 0) {
+        auto value = scopes[i].get_variable(name);
+        if (value != nullptr) {
+            return value;
+        }
+
+        i--;
     }
 
-    return object_manager.new_undefined();
+    throw_error("ReferenceError", name + " is not defined");
 }
 
 object::Object* Interpreter::set_variable(std::string name, object::Object* value) {
-    variables[name] = value;
-    return value;
+    return current_scope()->set_variable(name, value);
 }
 
 Interpreter::Interpreter() {
+    // push top level scope
+    scopes.push_back(Scope{});
+
     auto console = object_manager.new_object();
 
     auto log = object_manager.new_function();
@@ -182,7 +220,7 @@ Interpreter::Interpreter() {
 
     console->properties["log"] = log;
 
-    variables["console"] = console;
+    current_scope()->set_variable("console", console);
 }
 
 }
