@@ -9,8 +9,11 @@
 
 int main() {
     std::string source = R"(
-        var x = 1 + 2 + 3 + 4;
-        console.log(x);
+        if(0) {
+            console.log("it's true");
+        } else {
+            console.log("it's false");
+        }
     )";
 
     // get tokens

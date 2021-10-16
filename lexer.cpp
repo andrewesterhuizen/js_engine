@@ -22,6 +22,10 @@ std::string token_type_to_string(TokenType type) {
             return "LeftParen";
         case TokenType::RightParen:
             return "RightParen";
+        case TokenType::LeftBrace:
+            return "LeftBrace";
+        case TokenType::RightBrace:
+            return "RightBrace";
         case TokenType::Dot:
             return "Dot";
         case TokenType::EndOfFile:

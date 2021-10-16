@@ -20,6 +20,8 @@ enum class TokenType {
     Semicolon,
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
     Dot,
     EndOfFile
 };
@@ -50,9 +52,11 @@ class Lexer {
             {'+',  TokenType::Plus},
             {'(',  TokenType::LeftParen},
             {')',  TokenType::RightParen},
+            {'{',  TokenType::LeftBrace},
+            {'}',  TokenType::RightBrace},
             {'.',  TokenType::Dot},
     };
-    std::unordered_set<std::string> keywords = {"var"};
+    std::unordered_set<std::string> keywords = {"var", "if", "else"};
 
     void emit_token(TokenType type, std::string value) {
         tokens.push_back(Token{type, value});
@@ -154,9 +158,7 @@ class Lexer {
             next_char();
         } else if (isdigit(c)) {
             get_number();
-        } else if (
-                isalnum(c)
-                ) {
+        } else if (isalnum(c)) {
             auto text = get_text_until_next_token_or_whitespace();
             auto is_keyword = keywords.find(text) != keywords.end();
             emit_token(is_keyword ? TokenType::Keyword : TokenType::Identifier, text);
