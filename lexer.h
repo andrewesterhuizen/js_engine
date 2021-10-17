@@ -24,6 +24,8 @@ enum class TokenType {
     RightParen,
     LeftBrace,
     RightBrace,
+    LeftBracket,
+    RightBracket,
     Dot,
     EndOfFile
 };
@@ -52,6 +54,8 @@ class Lexer {
             {')',  TokenType::RightParen},
             {'{',  TokenType::LeftBrace},
             {'}',  TokenType::RightBrace},
+            {'[',  TokenType::LeftBracket},
+            {']',  TokenType::RightBracket},
             {'.',  TokenType::Dot},
     };
     std::unordered_set<std::string> keywords = {"var", "if", "else", "function"};

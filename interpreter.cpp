@@ -86,21 +86,44 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         case ast::ExpressionType::Member: {
             auto e = std::static_pointer_cast<ast::MemberExpression>(expression);
 
+            assert(e->object->type == ast::ExpressionType::Identifier);
             auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->object);
-            assert(left != nullptr);
-
-            auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->property);
-            assert(right != nullptr);
 
             auto obj = get_variable(left->name);
 
-            auto property = obj->get_propery(right->name);
 
-            if (property != nullptr) {
-                return property;
+            if (e->is_computed) {
+                object::Object* property;
+                auto right = execute(e->property);
+
+                if (right->type() == object::ObjectType::Number) {
+                    auto index = static_cast<object::Number*>(right);
+                    property = obj->get_property(index->value);
+                } else {
+                    assert(right->type() == object::ObjectType::String);
+                    auto name = static_cast<object::String*>(right);
+                    property = obj->get_property(name->value);
+                }
+
+                if (property != nullptr) {
+                    return property;
+                }
+
+                return object_manager.new_undefined();
+            } else {
+                assert(e->property->type == ast::ExpressionType::Identifier);
+                auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->property);
+
+                auto property = obj->get_property(right->name);
+
+                if (property != nullptr) {
+                    return property;
+                }
+
+                return object_manager.new_undefined();
             }
 
-            return object_manager.new_undefined();
+            assert(false);
         }
         case ast::ExpressionType::Assignment: {
             auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
@@ -151,11 +174,21 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto e = std::static_pointer_cast<ast::ObjectExpression>(expression);
             auto object = object_manager.new_object();
 
-            for(auto p : e->properties) {
+            for (auto p: e->properties) {
                 object->properties[p.first] = execute(p.second);
             }
 
             return object;
+        }
+        case ast::ExpressionType::Array: {
+            auto e = std::static_pointer_cast<ast::ArrayExpression>(expression);
+            auto array = object_manager.new_array();
+
+            for (auto e: e->elements) {
+                array->elements.push_back(execute(e));
+            }
+
+            return array;
         }
         case ast::ExpressionType::Binary: {
             auto e = std::static_pointer_cast<ast::BinaryExpression>(expression);

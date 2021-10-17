@@ -30,6 +30,10 @@ std::string token_type_to_string(TokenType type) {
             return "LeftBrace";
         case TokenType::RightBrace:
             return "RightBrace";
+        case TokenType::LeftBracket:
+            return "LeftBracket";
+        case TokenType::RightBracket:
+            return "RightBracket";
         case TokenType::Dot:
             return "Dot";
         case TokenType::EndOfFile:

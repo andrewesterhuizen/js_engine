@@ -50,6 +50,7 @@ bool Parser::token_type_is_end_of_expression(lexer::TokenType type) {
     return type == lexer::TokenType::Semicolon ||
            type == lexer::TokenType::RightParen ||
            type == lexer::TokenType::RightBrace ||
+           type == lexer::TokenType::RightBracket ||
            type == lexer::TokenType::Comma;
 }
 
@@ -99,7 +100,7 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
                 auto right_token = expect_next_token(lexer::TokenType::Identifier);
                 auto right = std::make_shared<ast::IdentifierExpression>(right_token.value);
 
-                auto member_expression = std::make_shared<ast::MemberExpression>(left, right);
+                auto member_expression = std::make_shared<ast::MemberExpression>(left, right, false);
 
                 next = next_token();
                 if (next.type == lexer::TokenType::Semicolon) {
@@ -124,21 +125,40 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
             }
 
             // call
-            auto call_expression = std::make_shared<ast::CallExpression>(left);
+            if (next.type == lexer::TokenType::LeftParen) {
+                auto call_expression = std::make_shared<ast::CallExpression>(left);
 
-            assert(next.type == lexer::TokenType::LeftParen);
-            next = peek_next_token();
-            if (next.type != lexer::TokenType::RightParen) {
-                next_token();
-                auto arg = parse_expression();
-                call_expression->arguments.push_back(arg);
+                assert(next.type == lexer::TokenType::LeftParen);
+                next = peek_next_token();
+                if (next.type != lexer::TokenType::RightParen) {
+                    next_token();
+                    auto arg = parse_expression();
+                    call_expression->arguments.push_back(arg);
+                }
+
+                next = next_token();
+                assert(next.type == lexer::TokenType::RightParen);
+                expect_next_token(lexer::TokenType::Semicolon);
+
+                return call_expression;
             }
 
-            next = next_token();
-            assert(next.type == lexer::TokenType::RightParen);
-            expect_next_token(lexer::TokenType::Semicolon);
+            // index expression
+            if (next.type == lexer::TokenType::LeftBracket) {
+                next_token();
+                auto right = parse_expression();
 
-            return call_expression;
+                expect_next_token(lexer::TokenType::RightBracket);
+                if(peek_next_token().type == lexer::TokenType::Semicolon) {
+                    next_token();
+                }
+
+                auto me = std::make_shared<ast::MemberExpression>(left, right, true);
+
+                return me;
+            }
+
+            assert(false);
         }
         case lexer::TokenType::LeftBrace: {
             auto next = next_token();
@@ -148,13 +168,13 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
             while (next.type != lexer::TokenType::RightBrace) {
                 auto id = next;
                 assert(id.type == lexer::TokenType::Identifier);
-                
+
                 expect_next_token(lexer::TokenType::Colon);
 
                 next_token();
                 auto value = parse_expression();
                 oe->properties[id.value] = value;
-                
+
                 next = next_token();
                 if (next.type == lexer::TokenType::Comma) {
                     next = next_token();
@@ -162,6 +182,22 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
             }
 
             return oe;
+        }
+        case lexer::TokenType::LeftBracket: {
+            auto next = next_token();
+            auto ae = std::make_shared<ast::ArrayExpression>();
+
+            // get properties
+            while (next.type != lexer::TokenType::RightBracket) {
+                ae->elements.push_back(parse_expression());
+
+                next = next_token();
+                if (next.type == lexer::TokenType::Comma) {
+                    next = next_token();
+                }
+            }
+
+            return ae;
         }
         default:
             unexpected_token();

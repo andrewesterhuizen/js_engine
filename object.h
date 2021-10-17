@@ -13,7 +13,8 @@ enum class ObjectType {
     Function,
     Number,
     String,
-    Boolean
+    Boolean,
+    Array
 };
 
 struct Object {
@@ -27,23 +28,28 @@ struct Object {
     virtual std::string to_string() {
         nlohmann::json j;
 
-        for(auto p : properties) {
+        for (auto p: properties) {
             j[p.first] = p.second->to_string();
         }
 
-        if(j.empty()) {
+        if (j.empty()) {
             return "{}";
         }
 
         return j.dump(4);
     }
 
-    Object* get_propery(std::string name) {
+    virtual Object* get_property(std::string name) {
         if (auto entry = properties.find(name); entry != properties.end()) {
             return entry->second;
         }
 
         return nullptr;
+    }
+
+    virtual Object* get_property(int index) {
+        auto name = std::to_string(index);
+        return get_property(name);
     }
 };
 
@@ -83,10 +89,53 @@ struct Boolean : public Object {
     std::string to_string() override { return value ? "true" : "false"; }
 };
 
+struct Array : public Object {
+    Array() : Object(ObjectType::Array) {}
+    std::vector<Object*> elements;
+    bool is_truthy() override { return true; }
+    std::string to_string() override {
+        nlohmann::json j;
+
+        std::vector<std::string> element_strings;
+
+        for (auto e: elements) {
+            element_strings.push_back(e->to_string());
+        }
+
+        j = element_strings;
+
+        if (j.empty()) {
+            return "[]";
+        }
+
+        return j.dump(4);
+    }
+
+    Object* get_property(std::string name) override {
+        // TODO: this number won't always be accurate
+        if(name == "length") {
+            // TODO: this needs to go through object_manager for when we implement garbage collection
+            return new Number(elements.size());
+        }
+
+        return Object::get_property(name);
+    }
+
+    Object* get_property(int index) override {
+        if (index > elements.size()) {
+            return nullptr;
+        }
+
+        return elements.at(index);
+    }
+};
+
+
 class ObjectManager {
 public:
     Object* new_object();
     Function* new_function();
+    Array* new_array();
     Number* new_number(double value);
     String* new_string(std::string value);
     Boolean* new_boolean(bool value);

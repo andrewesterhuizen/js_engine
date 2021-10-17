@@ -93,6 +93,7 @@ nlohmann::json MemberExpression::to_json() {
     j["type"] = "MemberExpression";
     j["object"] = object->to_json();
     j["property"] = property->to_json();
+    j["is_computed"] = is_computed;
     return j;
 }
 
@@ -151,6 +152,21 @@ nlohmann::json ObjectExpression::to_json() {
     for (auto p: properties) {
         j["properties"][p.first] = p.second->to_json();
     }
+
+    return j;
+}
+
+nlohmann::json ArrayExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "ArrayExpression";
+
+    std::vector<nlohmann::json> elements_json;
+
+    for (auto p: elements) {
+        elements_json.push_back(p->to_json());
+    }
+
+    j["elements"] = elements_json;
 
     return j;
 }

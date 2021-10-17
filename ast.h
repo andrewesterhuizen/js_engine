@@ -26,7 +26,8 @@ enum class ExpressionType {
     BooleanLiteral,
     Binary,
     Assignment,
-    Object
+    Object,
+    Array
 };
 
 enum class StatementType {
@@ -98,10 +99,11 @@ struct CallExpression : public Expression {
 };
 
 struct MemberExpression : public Expression {
-    MemberExpression(std::shared_ptr<Expression> object, std::shared_ptr<Expression> property) :
-            Expression(ExpressionType::Member), object(object), property(property) {}
+    MemberExpression(std::shared_ptr<Expression> object, std::shared_ptr<Expression> property, bool is_computed) :
+            Expression(ExpressionType::Member), object(object), property(property), is_computed(is_computed) {}
     std::shared_ptr<Expression> object;
     std::shared_ptr<Expression> property;
+    bool is_computed;
     nlohmann::json to_json() override;
 };
 
@@ -150,6 +152,12 @@ struct AssignmentExpression : public Expression {
 struct ObjectExpression : public Expression {
     ObjectExpression() : Expression(ExpressionType::Object) {}
     std::unordered_map<std::string, std::shared_ptr<Expression>> properties;
+    nlohmann::json to_json() override;
+};
+
+struct ArrayExpression : public Expression {
+    ArrayExpression() : Expression(ExpressionType::Array) {}
+    std::vector<std::shared_ptr<Expression>> elements;
     nlohmann::json to_json() override;
 };
 

@@ -16,6 +16,11 @@ Function* ObjectManager::new_function() {
     return new Function();
 }
 
+Array* ObjectManager::new_array() {
+    // just leak for now
+    return new Array();
+}
+
 Number* ObjectManager::new_number(double value) {
     // just leak for now
     return new Number(value);
