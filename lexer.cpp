@@ -18,6 +18,10 @@ std::string token_type_to_string(TokenType type) {
             return "Plus";
         case TokenType::Semicolon:
             return "Semicolon";
+        case TokenType::Colon:
+            return "Colon";
+        case TokenType::Comma:
+            return "Comma";
         case TokenType::LeftParen:
             return "LeftParen";
         case TokenType::RightParen:

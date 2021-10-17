@@ -142,6 +142,19 @@ nlohmann::json AssignmentExpression::to_json() {
     return j;
 }
 
+nlohmann::json ObjectExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "ObjectExpression";
+
+    j["properties"] = nlohmann::json();
+
+    for (auto p: properties) {
+        j["properties"][p.first] = p.second->to_json();
+    }
+
+    return j;
+}
+
 nlohmann::json Program::to_json() {
 
     nlohmann::json j;

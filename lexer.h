@@ -18,6 +18,8 @@ enum class TokenType {
     Equals,
     Plus,
     Semicolon,
+    Colon,
+    Comma,
     LeftParen,
     RightParen,
     LeftBrace,
@@ -42,6 +44,8 @@ class Lexer {
     std::unordered_map<char, TokenType> single_char_tokens = {
             {'\0', TokenType::EndOfFile},
             {';',  TokenType::Semicolon},
+            {':',  TokenType::Colon},
+            {',',  TokenType::Comma},
             {'=',  TokenType::Equals},
             {'+',  TokenType::Plus},
             {'(',  TokenType::LeftParen},

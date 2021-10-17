@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "lexer.h"
 #include "json.hpp"
@@ -24,7 +25,8 @@ enum class ExpressionType {
     StringLiteral,
     BooleanLiteral,
     Binary,
-    Assignment
+    Assignment,
+    Object
 };
 
 enum class StatementType {
@@ -142,6 +144,12 @@ struct AssignmentExpression : public Expression {
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
     Operator op;
+    nlohmann::json to_json() override;
+};
+
+struct ObjectExpression : public Expression {
+    ObjectExpression() : Expression(ExpressionType::Object) {}
+    std::unordered_map<std::string, std::shared_ptr<Expression>> properties;
     nlohmann::json to_json() override;
 };
 

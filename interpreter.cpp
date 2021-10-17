@@ -106,13 +106,30 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
             assert(e->op == ast::Operator::Equals);
 
-            assert(e->left->type == ast::ExpressionType::Identifier);
-            auto id_expression = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
 
-            auto right_result = execute(e->right);
+            if (e->left->type == ast::ExpressionType::Identifier) {
+                auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
+                auto right = execute(e->right);
+                return set_variable(left->name, right);
+            }
 
-            return set_variable(id_expression->name, right_result);
+            if (e->left->type == ast::ExpressionType::Member) {
+                auto left = std::static_pointer_cast<ast::MemberExpression>(e->left);
+                assert(left->object->type == ast::ExpressionType::Identifier);
+                assert(left->property->type == ast::ExpressionType::Identifier);
 
+                auto left_id = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
+                auto object = get_variable(left_id->name);
+
+                auto right_id = std::static_pointer_cast<ast::IdentifierExpression>(left->property);
+
+                auto right = execute(e->right);
+                object->properties[right_id->name] = right;
+
+                return right;
+            }
+
+            assert(false);
         }
         case ast::ExpressionType::Identifier: {
             auto e = std::static_pointer_cast<ast::IdentifierExpression>(expression);
@@ -129,6 +146,16 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         case ast::ExpressionType::BooleanLiteral: {
             auto e = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression);
             return object_manager.new_boolean(e->value);
+        }
+        case ast::ExpressionType::Object: {
+            auto e = std::static_pointer_cast<ast::ObjectExpression>(expression);
+            auto object = object_manager.new_object();
+
+            for(auto p : e->properties) {
+                object->properties[p.first] = execute(p.second);
+            }
+
+            return object;
         }
         case ast::ExpressionType::Binary: {
             auto e = std::static_pointer_cast<ast::BinaryExpression>(expression);

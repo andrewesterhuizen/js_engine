@@ -17,6 +17,7 @@ class Parser {
     lexer::Token peek_next_token();
     lexer::Token expect_next_token(lexer::TokenType type);
     void unexpected_token();
+    bool token_type_is_end_of_expression(lexer::TokenType type);
 
     std::shared_ptr<ast::Expression> parse_expression();
     std::shared_ptr<ast::Statement> parse_statement();

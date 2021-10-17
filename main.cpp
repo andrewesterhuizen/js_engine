@@ -9,10 +9,16 @@
 
 int main() {
     std::string source = R"(
-        var i = 1;
-        console.log(i);
-        i = 2;
-        console.log(i);
+        var obj = {
+            x: "hello from property set in declaration",
+            y: 1.234
+        };
+        obj.z = "hello from property assignment";
+
+        console.log(obj);
+        console.log(obj.x);
+        console.log(obj.y);
+        console.log(obj.z);
     )";
 
     // get tokens

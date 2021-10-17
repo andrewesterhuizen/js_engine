@@ -23,7 +23,20 @@ struct Object {
 
     ObjectType type() { return object_type; }
     virtual bool is_truthy() { return true; }
-    virtual std::string to_string() { return "Object"; }
+
+    virtual std::string to_string() {
+        nlohmann::json j;
+
+        for(auto p : properties) {
+            j[p.first] = p.second->to_string();
+        }
+
+        if(j.empty()) {
+            return "{}";
+        }
+
+        return j.dump(4);
+    }
 
     Object* get_propery(std::string name) {
         if (auto entry = properties.find(name); entry != properties.end()) {
@@ -60,7 +73,7 @@ struct String : public Object {
     String(std::string value) : Object(ObjectType::String), value(value) {};
     std::string value;
     bool is_truthy() override { return value != ""; }
-    std::string to_string() override { return value; }
+    std::string to_string() override { return "\"" + value + "\""; }
 };
 
 struct Boolean : public Object {
