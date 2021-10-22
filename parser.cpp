@@ -175,8 +175,7 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
 
             auto next = next_token();
 
-            assert(next.type == lexer::TokenType::Plus);
-            auto op = ast::token_type_to_operator(lexer::TokenType::Plus);
+            auto op = ast::token_type_to_operator(next.type);
 
             next_token();
             auto right = parse_expression();

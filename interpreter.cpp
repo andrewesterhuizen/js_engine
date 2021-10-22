@@ -214,7 +214,6 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
         case ast::ExpressionType::Binary: {
             auto e = std::static_pointer_cast<ast::BinaryExpression>(expression);
-            assert(e->op == ast::Operator::Plus);
 
             auto right_result = execute(e->right);
             auto left_result = execute(e->left);
@@ -228,6 +227,18 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     switch (e->op) {
                         case ast::Operator::Plus: {
                             return object_manager.new_number(left->value + right->value);
+                        }
+                        case ast::Operator::Minus: {
+                            return object_manager.new_number(left->value - right->value);
+                        }
+                        case ast::Operator::Multiply: {
+                            return object_manager.new_number(left->value * right->value);
+                        }
+                        case ast::Operator::Divide: {
+                            return object_manager.new_number(left->value / right->value);
+                        }
+                        case ast::Operator::Modulo: {
+                            return object_manager.new_number(std::fmod(left->value, right->value));
                         }
                         case ast::Operator::Equals: {
                             assert(false);

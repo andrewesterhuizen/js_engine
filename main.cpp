@@ -9,18 +9,8 @@
 
 int main() {
     std::string source = R"(
-        var a = ["hello", "from", "array"];
-        console.log(a[0]);
-        console.log(a[1]);
-        console.log(a[2]);
-
-        a[0] = "goodbye";
-
-        console.log(a[0]);
-        console.log(a[1]);
-        console.log(a[2]);
-
-        console.log(a.length);
+        var x = 5 * 6 / 6 + 2 - 1 % 2;
+        console.log(x);
     )";
 
     // get tokens

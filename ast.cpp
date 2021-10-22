@@ -8,6 +8,14 @@ std::string operator_to_string(Operator op) {
     switch (op) {
         case Operator::Plus:
             return "+";
+        case Operator::Minus:
+            return "-";
+        case Operator::Multiply:
+            return "*";
+        case Operator::Divide:
+            return "/";
+        case Operator::Modulo:
+            return "%";
         case Operator::Equals:
             return "=";
     }
@@ -20,6 +28,14 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
     switch (token_type) {
         case lexer::TokenType::Plus:
             return Operator::Plus;
+        case lexer::TokenType::Minus:
+            return Operator::Minus;
+        case lexer::TokenType::Asterisk:
+            return Operator::Multiply;
+        case lexer::TokenType::Slash:
+            return Operator::Divide;
+        case lexer::TokenType::Percent:
+            return Operator::Modulo;
         case lexer::TokenType::Equals:
             return Operator::Equals;
         default:

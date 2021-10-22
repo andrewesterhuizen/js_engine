@@ -11,6 +11,10 @@ namespace ast {
 
 enum class Operator {
     Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Modulo,
     Equals
 };
 
