@@ -129,6 +129,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
             assert(e->op == ast::Operator::Equals);
 
+            auto right = execute(e->right);
 
             if (e->left->type == ast::ExpressionType::Identifier) {
                 auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
@@ -138,18 +139,39 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
             if (e->left->type == ast::ExpressionType::Member) {
                 auto left = std::static_pointer_cast<ast::MemberExpression>(e->left);
-                assert(left->object->type == ast::ExpressionType::Identifier);
-                assert(left->property->type == ast::ExpressionType::Identifier);
 
-                auto left_id = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
-                auto object = get_variable(left_id->name);
+                if (left->is_computed) {
+                    assert(left->object->type == ast::ExpressionType::Identifier);
+                    auto object_name = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
+                    auto object = get_variable(object_name->name);
 
-                auto right_id = std::static_pointer_cast<ast::IdentifierExpression>(left->property);
+                    auto property = execute(left->property);
+                    if (property->type() == object::ObjectType::Number) {
+                        auto index = static_cast<object::Number*>(property);
+                        object->set_property(index->value, right);
+                        return property;
+                    }
 
-                auto right = execute(e->right);
-                object->properties[right_id->name] = right;
+                    if (property->type() == object::ObjectType::String) {
+                        auto name = static_cast<object::String*>(property);
+                        object->set_property(name->value, right);
+                        return property;
+                    }
 
-                return right;
+                    assert(false);
+                } else {
+                    assert(left->object->type == ast::ExpressionType::Identifier);
+                    assert(left->property->type == ast::ExpressionType::Identifier);
+
+                    auto left_id = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
+                    auto object = get_variable(left_id->name);
+
+                    auto right_id = std::static_pointer_cast<ast::IdentifierExpression>(left->property);
+
+                    object->properties[right_id->name] = right;
+
+                    return right;
+                }
             }
 
             assert(false);

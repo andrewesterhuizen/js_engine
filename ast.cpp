@@ -138,7 +138,7 @@ nlohmann::json AssignmentExpression::to_json() {
     nlohmann::json j;
     j["type"] = "AssignmentExpression";
     j["left"] = left->to_json();
-    j["left"] = right->to_json();
+    j["right"] = right->to_json();
     j["op"] = operator_to_string(op);
     return j;
 }

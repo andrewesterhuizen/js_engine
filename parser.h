@@ -17,8 +17,13 @@ class Parser {
     lexer::Token peek_next_token();
     lexer::Token expect_next_token(lexer::TokenType type);
     void unexpected_token();
+    bool next_token_type_is_end_of_expression();
     bool token_type_is_end_of_expression(lexer::TokenType type);
 
+    std::shared_ptr<ast::Expression> parse_assignment_expression(std::shared_ptr<ast::Expression> left);
+    std::shared_ptr<ast::Expression> parse_call_expression(std::shared_ptr<ast::Expression> callee);
+    std::shared_ptr<ast::Expression> parse_member_expression(std::shared_ptr<ast::Expression> left);
+    std::shared_ptr<ast::Expression> parse_identifier_expression();
     std::shared_ptr<ast::Expression> parse_expression();
     std::shared_ptr<ast::Statement> parse_statement();
     std::vector<std::shared_ptr<ast::Statement>> parse_statements();

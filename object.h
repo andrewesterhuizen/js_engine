@@ -51,6 +51,16 @@ struct Object {
         auto name = std::to_string(index);
         return get_property(name);
     }
+
+    virtual Object* set_property(std::string name, Object* value) {
+        properties[name] = value;
+        return value;
+    }
+
+    virtual Object* set_property(int index, Object* value) {
+        auto name = std::to_string(index);
+        return set_property(name, value);
+    }
 };
 
 struct Function : public Object {
@@ -113,7 +123,7 @@ struct Array : public Object {
 
     Object* get_property(std::string name) override {
         // TODO: this number won't always be accurate
-        if(name == "length") {
+        if (name == "length") {
             // TODO: this needs to go through object_manager for when we implement garbage collection
             return new Number(elements.size());
         }
@@ -122,11 +132,20 @@ struct Array : public Object {
     }
 
     Object* get_property(int index) override {
-        if (index > elements.size()) {
+        if ((index + 1) > elements.size()) {
             return nullptr;
         }
 
         return elements.at(index);
+    }
+
+    Object* set_property(int index, Object* value) override {
+        if (index > elements.size()) {
+            elements.resize(index + 1);
+        }
+
+        elements[index] = value;
+        return value;
     }
 };
 

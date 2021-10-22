@@ -13,6 +13,13 @@ int main() {
         console.log(a[0]);
         console.log(a[1]);
         console.log(a[2]);
+
+        a[0] = "goodbye";
+
+        console.log(a[0]);
+        console.log(a[1]);
+        console.log(a[2]);
+
         console.log(a.length);
     )";
 
