@@ -9,7 +9,7 @@
 
 int main() {
     std::string source = R"(
-        var x = 5 * 6 / 6 + 2 - 1 % 2;
+        var x = true || false;
         console.log(x);
     )";
 

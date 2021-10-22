@@ -15,12 +15,21 @@ enum class TokenType {
     Identifier,
     Number,
     String,
-    Equals,
     Plus,
     Minus,
     Slash,
     Asterisk,
     Percent,
+    And,
+    Or,
+    EqualTo,
+    EqualToStrict,
+    NotEqualTo,
+    LessThan,
+    LessThanOrEqualTo,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+    Equals,
     Semicolon,
     Colon,
     Comma,
@@ -52,7 +61,6 @@ class Lexer {
             {';',  TokenType::Semicolon},
             {':',  TokenType::Colon},
             {',',  TokenType::Comma},
-            {'=',  TokenType::Equals},
             {'+',  TokenType::Plus},
             {'-',  TokenType::Minus},
             {'*',  TokenType::Asterisk},
@@ -66,10 +74,12 @@ class Lexer {
             {']',  TokenType::RightBracket},
             {'.',  TokenType::Dot},
     };
-    std::unordered_set<std::string> keywords = {"var", "if", "else", "function"};
+
+    std::unordered_set<std::string> keywords = {"var", "if", "else", "function", "true", "false"};
 
     void emit_token(TokenType type, std::string value);
     char next_char();
+    char peek_next_char();
     bool is_single_char_token(char c);
     std::string get_text_until_next_token_or_whitespace();
     void skip_whitespace();

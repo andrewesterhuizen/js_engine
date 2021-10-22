@@ -15,7 +15,16 @@ enum class Operator {
     Multiply,
     Divide,
     Modulo,
-    Equals
+    Equals,
+    EqualTo,
+    EqualToStrict,
+    And,
+    Or,
+    NotEqualTo,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+    LessThan,
+    LessThanOrEqualTo
 };
 
 Operator token_type_to_operator(lexer::TokenType token_type);

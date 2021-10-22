@@ -14,6 +14,24 @@ std::string token_type_to_string(TokenType type) {
             return "Number";
         case TokenType::Equals:
             return "Equals";
+        case TokenType::EqualTo:
+            return "EqualTo";
+        case TokenType::EqualToStrict:
+            return "EqualToStrict";
+        case TokenType::And:
+            return "And";
+        case TokenType::Or:
+            return "Or";
+        case TokenType::LessThan:
+            return "LessThan";
+        case TokenType::LessThanOrEqualTo:
+            return "LessThanOrEqualTo";
+        case TokenType::GreaterThan:
+            return "GreaterThan";
+        case TokenType::GreaterThanOrEqualTo:
+            return "GreaterThanOrEqualTo";
+        case TokenType::NotEqualTo:
+            return "NotEqualTo";
         case TokenType::Plus:
             return "Plus";
         case TokenType::Minus:
@@ -69,6 +87,14 @@ char Lexer::next_char() {
     }
 
     return source[++index];
+}
+
+char Lexer::peek_next_char() {
+    if (index + 1 > source.length()) {
+        return 0;
+    }
+
+    return source[index + 1];
 }
 
 bool Lexer::is_single_char_token(char c) {
@@ -137,6 +163,67 @@ void Lexer::get_token() {
 
     if (auto entry = single_char_tokens.find(c); entry != single_char_tokens.end()) {
         emit_token(entry->second, std::string(1, entry->first));
+        next_char();
+    } else
+        // TODO: clean up these logical operator conditionals
+    if (c == '=') {
+        if (peek_next_char() == '=') {
+            next_char();
+            if (peek_next_char() == '=') {
+                next_char();
+                emit_token(TokenType::EqualToStrict, "===");
+            } else {
+                emit_token(TokenType::EqualTo, "==");
+            }
+        } else {
+            emit_token(TokenType::Equals, "=");
+        }
+
+        next_char();
+    } else if (c == '>') {
+        if (peek_next_char() == '=') {
+            next_char();
+            emit_token(TokenType::GreaterThanOrEqualTo, ">=");
+        } else {
+            emit_token(TokenType::GreaterThan, ">");
+        }
+
+        next_char();
+    } else if (c == '<') {
+        if (peek_next_char() == '=') {
+            next_char();
+            emit_token(TokenType::LessThanOrEqualTo, "<=");
+        } else {
+            emit_token(TokenType::LessThan, "<");
+        }
+
+        next_char();
+    } else if (c == '&') {
+        if (peek_next_char() == '&') {
+            next_char();
+            emit_token(TokenType::And, "&&");
+        } else {
+            assert(false);
+        }
+
+        next_char();
+    } else if (c == '|') {
+        if (peek_next_char() == '|') {
+            next_char();
+            emit_token(TokenType::Or, "||");
+        } else {
+            assert(false);
+        }
+
+        next_char();
+    } else if (c == '!') {
+        if (peek_next_char() == '=') {
+            next_char();
+            emit_token(TokenType::NotEqualTo, "!=");
+        } else {
+            assert(false);
+        }
+
         next_char();
     } else if (c == '"') {
         next_char();

@@ -221,24 +221,62 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             switch (left_result->type()) {
                 case object::ObjectType::Number: {
                     auto left = static_cast<object::Number*>(left_result);
-                    assert(right_result->type() == object::ObjectType::Number);
                     auto right = static_cast<object::Number*>(right_result);
 
                     switch (e->op) {
                         case ast::Operator::Plus: {
+                            assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(left->value + right->value);
                         }
                         case ast::Operator::Minus: {
+                            assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(left->value - right->value);
                         }
                         case ast::Operator::Multiply: {
+                            assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(left->value * right->value);
                         }
                         case ast::Operator::Divide: {
+                            assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(left->value / right->value);
                         }
                         case ast::Operator::Modulo: {
+                            assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(std::fmod(left->value, right->value));
+                        }
+                        case ast::Operator::EqualTo: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value == right->value);
+                        }
+                        case ast::Operator::EqualToStrict: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value == right->value);
+                        }
+                        case ast::Operator::And: {
+                            return object_manager.new_boolean(left->is_truthy() && right->is_truthy());
+                        }
+                        case ast::Operator::Or: {
+                            return object_manager.new_boolean(left->is_truthy() || right->is_truthy());
+                        }
+                        case ast::Operator::NotEqualTo: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value != right->value);
+                        }
+                        case ast::Operator::GreaterThan: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value > right->value);
+                        }
+                        case ast::Operator::GreaterThanOrEqualTo: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value >= right->value);
+                        }
+                        case ast::Operator::LessThan: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value < right->value);
+                        }
+                        case ast::Operator::LessThanOrEqualTo: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value <= right->value);
                         }
                         case ast::Operator::Equals: {
                             assert(false);
@@ -246,6 +284,47 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     }
 
                     assert(false);
+                }
+                case object::ObjectType::Boolean: {
+                    auto left = static_cast<object::Boolean*>(left_result);
+
+                    switch (e->op) {
+                        case ast::Operator::EqualTo: {
+                            return object_manager.new_boolean(left->value == right_result->is_truthy());
+                        }
+                        case ast::Operator::EqualToStrict: {
+                            return object_manager.new_boolean(left->value == right_result->is_truthy());
+                        }
+                        case ast::Operator::And: {
+                            return object_manager.new_boolean(left->value && right_result->is_truthy());
+                        }
+                        case ast::Operator::Or: {
+                            return object_manager.new_boolean(left->value || right_result->is_truthy());
+                        }
+                        case ast::Operator::NotEqualTo: {
+                            return object_manager.new_boolean(left->value != right_result->is_truthy());
+                        }
+                        case ast::Operator::GreaterThan: {
+                            return object_manager.new_boolean(left->value > right_result->is_truthy());
+                        }
+                        case ast::Operator::GreaterThanOrEqualTo: {
+                            return object_manager.new_boolean(left->value >= right_result->is_truthy());
+                        }
+                        case ast::Operator::LessThan: {
+                            return object_manager.new_boolean(left->value < right_result->is_truthy());
+                        }
+                        case ast::Operator::LessThanOrEqualTo: {
+                            return object_manager.new_boolean(left->value <= right_result->is_truthy());
+                        }
+                        case ast::Operator::Plus:
+                        case ast::Operator::Minus:
+                        case ast::Operator::Multiply:
+                        case ast::Operator::Divide:
+                        case ast::Operator::Modulo:
+                        case ast::Operator::Equals: {
+                            assert(false);
+                        }
+                    }
                 }
                 default:
                     assert(false);

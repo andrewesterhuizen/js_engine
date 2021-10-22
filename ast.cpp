@@ -16,6 +16,24 @@ std::string operator_to_string(Operator op) {
             return "/";
         case Operator::Modulo:
             return "%";
+        case Operator::EqualTo:
+            return "==";
+        case Operator::EqualToStrict:
+            return "===";
+        case Operator::And:
+            return "&&";
+        case Operator::Or:
+            return "||";
+        case Operator::NotEqualTo:
+            return "!=";
+        case Operator::GreaterThan:
+            return ">";
+        case Operator::GreaterThanOrEqualTo:
+            return ">=";
+        case Operator::LessThan:
+            return "<";
+        case Operator::LessThanOrEqualTo:
+            return "<=";
         case Operator::Equals:
             return "=";
     }
@@ -36,6 +54,24 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::Divide;
         case lexer::TokenType::Percent:
             return Operator::Modulo;
+        case lexer::TokenType::EqualTo:
+            return Operator::EqualTo;
+        case lexer::TokenType::EqualToStrict:
+            return Operator::EqualToStrict;
+        case lexer::TokenType::And:
+            return Operator::And;
+        case lexer::TokenType::Or:
+            return Operator::Or;
+        case lexer::TokenType::NotEqualTo:
+            return Operator::NotEqualTo;
+        case lexer::TokenType::GreaterThan:
+            return Operator::GreaterThan;
+        case lexer::TokenType::GreaterThanOrEqualTo:
+            return Operator::GreaterThanOrEqualTo;
+        case lexer::TokenType::LessThan:
+            return Operator::LessThan;
+        case lexer::TokenType::LessThanOrEqualTo:
+            return Operator::LessThanOrEqualTo;
         case lexer::TokenType::Equals:
             return Operator::Equals;
         default:

@@ -83,7 +83,7 @@ std::shared_ptr<ast::Expression> Parser::parse_call_expression(std::shared_ptr<a
     auto call_expression = std::make_shared<ast::CallExpression>(callee);
 
     assert(next.type == lexer::TokenType::LeftParen);
- 
+
     // TODO: multiple args
     next = peek_next_token();
     if (next.type != lexer::TokenType::RightParen) {
@@ -235,6 +235,23 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
 
             return ae;
         }
+        case lexer::TokenType::Keyword: {
+            assert(t.value == "true" || t.value == "false");
+            auto left = std::make_shared<ast::BooleanLiteralExpression>(t.value == "true");
+
+            if (next_token_type_is_end_of_expression()) {
+                return left;
+            }
+
+            auto next = next_token();
+
+            auto op = ast::token_type_to_operator(next.type);
+
+            next_token();
+            auto right = parse_expression();
+
+            return std::make_shared<ast::BinaryExpression>(left, right, op);
+        }
         default:
             unexpected_token();
             assert(false);
@@ -287,6 +304,10 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 auto body = parse_statement();
 
                 return std::make_shared<ast::FunctionDeclarationStatement>(identifier_token.value, body);
+            } else if (t.value == "true" || t.value == "false") {
+                auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
+                expect_next_token(lexer::TokenType::Semicolon);
+                return s;
             }
 
             assert(false);
