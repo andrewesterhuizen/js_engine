@@ -48,7 +48,8 @@ enum class StatementType {
     Block,
     If,
     FunctionDeclaration,
-    VariableDeclaration
+    VariableDeclaration,
+    While
 };
 
 struct Statement {
@@ -100,6 +101,14 @@ struct VariableDeclarationStatement : public Statement {
             : Statement(StatementType::VariableDeclaration), identifier(identifier), value(value) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
+    nlohmann::json to_json() override;
+};
+
+struct WhileStatement : public Statement {
+    WhileStatement(std::shared_ptr<Expression> test, std::shared_ptr<Statement> body)
+            : Statement(StatementType::While), test(test), body(body) {}
+    std::shared_ptr<Expression> test;
+    std::shared_ptr<Statement> body;
     nlohmann::json to_json() override;
 };
 

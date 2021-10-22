@@ -22,6 +22,15 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
 
             return object_manager.new_undefined();
         }
+        case ast::StatementType::While: {
+            auto s = std::static_pointer_cast<ast::WhileStatement>(statement);
+
+            while(execute(s->test)->is_truthy()) {
+                execute(s->body);
+            }
+
+            return object_manager.new_undefined();
+        }
         case ast::StatementType::Block: {
             auto s = std::static_pointer_cast<ast::BlockStatement>(statement);
             object::Object* final_value = nullptr;

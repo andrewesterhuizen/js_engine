@@ -9,8 +9,12 @@
 
 int main() {
     std::string source = R"(
-        var x = true || false;
-        console.log(x);
+        var i = 0;
+
+        while (i < 100) {
+            console.log(i);
+            i = i + 1;
+        }
     )";
 
     // get tokens

@@ -75,7 +75,7 @@ class Lexer {
             {'.',  TokenType::Dot},
     };
 
-    std::unordered_set<std::string> keywords = {"var", "if", "else", "function", "true", "false"};
+    std::unordered_set<std::string> keywords = {"var", "if", "else", "function", "true", "false", "while"};
 
     void emit_token(TokenType type, std::string value);
     char next_char();

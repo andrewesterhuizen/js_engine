@@ -194,7 +194,20 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
             assert(false);
         }
         case lexer::TokenType::Identifier: {
-            return parse_identifier_expression();
+            auto left = parse_identifier_expression();
+
+            if (next_token_type_is_end_of_expression()) {
+                return left;
+            }
+
+            auto next = tokens[index];
+
+            auto op = ast::token_type_to_operator(next.type);
+
+            next_token();
+            auto right = parse_expression();
+
+            return std::make_shared<ast::BinaryExpression>(left, right, op);
         }
         case lexer::TokenType::LeftBrace: {
             auto next = next_token();
@@ -293,6 +306,18 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 }
 
                 return std::make_shared<ast::IfStatement>(test, consequent, alternative);
+            } else if (t.value == "while") {
+                expect_next_token(lexer::TokenType::LeftParen);
+
+                next_token();
+                auto test = parse_expression();
+
+                expect_next_token(lexer::TokenType::RightParen);
+
+                next_token();
+                auto body = parse_statement();
+
+                return std::make_shared<ast::WhileStatement>(test, body);
             } else if (t.value == "function") {
                 auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
 

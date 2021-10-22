@@ -125,6 +125,14 @@ nlohmann::json VariableDeclarationStatement::to_json() {
     return j;
 }
 
+nlohmann::json WhileStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "WhileStatement";
+    j["test"] = test->to_json();
+    j["body"] = body->to_json();
+    return j;
+}
+
 nlohmann::json CallExpression::to_json() {
     nlohmann::json j;
     j["type"] = "CallExpression";
