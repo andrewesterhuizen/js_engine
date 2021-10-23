@@ -69,7 +69,7 @@ class Lexer {
 
     std::vector<Pattern> patterns = {
             {"^(var|if|function|true|false|while|for)", TokenType::Keyword},
-            {"^[a-zA-Z|$|_]\\w*",                       TokenType::Identifier},
+            {"^(_|\\$|[a-zA-Z])\\w*",                   TokenType::Identifier},
             {"^\".*\"",                                 TokenType::String},
             {"^\\d[.\\d+]*",                            TokenType::Number},
             {"^===",                                    TokenType::EqualToStrict},
