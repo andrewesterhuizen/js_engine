@@ -169,7 +169,7 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
             return left;
         }
 
-        if(token_type_is_end_of_expression(tokens[index].type)) {
+        if (token_type_is_end_of_expression(tokens[index].type)) {
             backup();
             return left;
         }
@@ -177,6 +177,18 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
         next = next_token();
     }
 
+    // update
+    if (next.type == lexer::TokenType::Increment || next.type == lexer::TokenType::Decrement) {
+        left = std::make_shared<ast::UpdateExpression>(left, ast::token_type_to_operator(next.type), false);
+
+        if (peek_next_token().type == lexer::TokenType::Semicolon) {
+            return left;
+        }
+
+        next = next_token();
+    }
+
+    // binary
     if (ast::token_type_is_operator(next.type)) {
         left = parse_binary_expression(left);
 

@@ -36,6 +36,10 @@ std::string operator_to_string(Operator op) {
             return "<=";
         case Operator::Equals:
             return "=";
+        case Operator::Increment:
+            return "++";
+        case Operator::Decrement:
+            return "--";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -74,6 +78,10 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::LessThanOrEqualTo;
         case lexer::TokenType::Equals:
             return Operator::Equals;
+        case lexer::TokenType::Increment:
+            return Operator::Increment;
+        case lexer::TokenType::Decrement:
+            return Operator::Decrement;
         default:
             std::cerr << "missing case for TokenType in token_type_to_operator";
             assert(false);
@@ -97,6 +105,8 @@ bool token_type_is_operator(lexer::TokenType token_type) {
         case lexer::TokenType::LessThan:
         case lexer::TokenType::LessThanOrEqualTo:
         case lexer::TokenType::Equals:
+        case lexer::TokenType::Increment:
+        case lexer::TokenType::Decrement:
             return true;
         default:
             return false;
@@ -224,6 +234,15 @@ nlohmann::json BinaryExpression::to_json() {
     j["left"] = left->to_json();
     j["left"] = right->to_json();
     j["op"] = operator_to_string(op);
+    return j;
+}
+
+nlohmann::json UpdateExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "UpdateExpression";
+    j["argument"] = argument->to_json();
+    j["op"] = operator_to_string(op);
+    j["is_prefix"] = is_prefix;
     return j;
 }
 

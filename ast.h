@@ -15,6 +15,8 @@ enum class Operator {
     Multiply,
     Divide,
     Modulo,
+    Increment,
+    Decrement,
     Equals,
     EqualTo,
     EqualToStrict,
@@ -42,7 +44,8 @@ enum class ExpressionType {
     Binary,
     Assignment,
     Object,
-    Array
+    Array,
+    Update
 };
 
 enum class StatementType {
@@ -136,7 +139,7 @@ struct CallExpression : public Expression {
 
 struct VariableDeclarationExpression : public Expression {
     VariableDeclarationExpression(std::string identifier, std::shared_ptr<Expression> value)
-    : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value) {}
+            : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
     nlohmann::json to_json() override;
@@ -181,6 +184,15 @@ struct BinaryExpression : public Expression {
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
     Operator op;
+    nlohmann::json to_json() override;
+};
+
+struct UpdateExpression : public Expression {
+    UpdateExpression(std::shared_ptr<Expression> argument, Operator op, bool is_prefix)
+            : Expression(ExpressionType::Update), argument(argument), op(op), is_prefix(is_prefix) {}
+    std::shared_ptr<Expression> argument;
+    Operator op;
+    bool is_prefix;
     nlohmann::json to_json() override;
 };
 

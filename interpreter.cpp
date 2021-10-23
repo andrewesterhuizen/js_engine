@@ -352,6 +352,21 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     assert(false);
             }
         }
+        case ast::ExpressionType::Update: {
+            auto e = std::static_pointer_cast<ast::UpdateExpression>(expression);
+            assert(e->op == ast::Operator::Increment || e->op == ast::Operator::Decrement);
+            assert(e->argument->type == ast::ExpressionType::Identifier);
+
+            auto identifier = std::static_pointer_cast<ast::IdentifierExpression>(e->argument);
+            auto value_object = get_variable(identifier->name);
+            assert(value_object->type() == object::ObjectType::Number);
+            auto value_number = static_cast<object::Number*>(value_object);
+            auto new_value = e->op == ast::Operator::Increment ? value_number->value + 1 : value_number->value - 1;
+
+            set_variable(identifier->name, object_manager.new_number(new_value));
+
+            return object_manager.new_number(e->is_prefix ? new_value : value_number->value);
+        }
     }
 
     std::cerr << "unable to execute expression type: " << expression->to_json()["type"] << "\n";

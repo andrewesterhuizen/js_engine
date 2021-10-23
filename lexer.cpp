@@ -42,6 +42,10 @@ std::string token_type_to_string(TokenType type) {
             return "Asterisk";
         case TokenType::Percent:
             return "Percent";
+        case TokenType::Increment:
+            return "Increment";
+        case TokenType::Decrement:
+            return "Decrement";
         case TokenType::Semicolon:
             return "Semicolon";
         case TokenType::Colon:
@@ -104,7 +108,7 @@ bool Lexer::is_single_char_token(char c) {
 std::string Lexer::get_text_until_next_token_or_whitespace() {
     std::string text;
     auto c = source[index];
-    while (!is_single_char_token(c) && c != ' ' && c != '\n') {
+    while (std::isalnum(c)) {
         text += c;
         c = next_char();
 
@@ -222,6 +226,24 @@ void Lexer::get_token() {
             emit_token(TokenType::NotEqualTo, "!=");
         } else {
             assert(false);
+        }
+
+        next_char();
+    } else if (c == '+') {
+        if (peek_next_char() == '+') {
+            next_char();
+            emit_token(TokenType::Increment, "++");
+        } else {
+            emit_token(TokenType::Plus, "+");
+        }
+
+        next_char();
+    } else if (c == '-') {
+        if (peek_next_char() == '-') {
+            next_char();
+            emit_token(TokenType::Decrement, "--");
+        } else {
+            emit_token(TokenType::Minus, "-");
         }
 
         next_char();

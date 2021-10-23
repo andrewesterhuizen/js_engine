@@ -9,10 +9,12 @@
 
 int main() {
     std::string source = R"(
-       for (var i = 0; i < 5; i = i + 1) {
-            console.log(i);
-        }
-    )";
+        var x = 1;
+        x++;
+        console.log(x);
+        x--;
+        console.log(x);
+)";
 
     // get tokens
     lexer::Lexer l;
