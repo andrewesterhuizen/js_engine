@@ -59,6 +59,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
 
             auto func = object_manager.new_function();
             func->is_builtin = false;
+            func->parameters = s->parameters;
             func->body = s->body;
 
             return declare_variable(s->identifier, func);
@@ -94,6 +95,12 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             }
 
             push_scope();
+
+            for (auto i = 0; i < func->parameters.size(); i++) {
+                auto has_arg = i < args.size();
+                auto value = has_arg ? args[i] : object_manager.new_undefined();
+                set_variable(func->parameters[i], value);
+            }
 
             auto return_value = execute(func->body);
 
@@ -300,7 +307,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                             assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_boolean(left->value <= right->value);
                         }
-                        case ast::Operator::Equals: {
+                        case ast::Operator::Equals:
+                        case ast::Operator::Increment:
+                        case ast::Operator::Decrement: {
                             assert(false);
                         }
                     }
@@ -343,7 +352,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                         case ast::Operator::Multiply:
                         case ast::Operator::Divide:
                         case ast::Operator::Modulo:
-                        case ast::Operator::Equals: {
+                        case ast::Operator::Equals:
+                        case ast::Operator::Increment:
+                        case ast::Operator::Decrement: {
                             assert(false);
                         }
                     }

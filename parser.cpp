@@ -96,12 +96,19 @@ std::shared_ptr<ast::Expression> Parser::parse_call_expression(std::shared_ptr<a
 
     assert(next.type == lexer::TokenType::LeftParen);
 
-    // TODO: multiple args
-    next = peek_next_token();
-    if (next.type != lexer::TokenType::RightParen) {
-        next_token();
+    next = next_token();
+    while (next.type != lexer::TokenType::RightParen) {
         auto arg = parse_expression();
         call_expression->arguments.push_back(arg);
+
+        if(peek_next_token().type == lexer::TokenType::Semicolon) {
+            break;
+        }
+
+        next = next_token();
+        if (next.type == lexer::TokenType::Comma) {
+            next = next_token();
+        }
     }
 
     return call_expression;
@@ -382,14 +389,28 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
             } else if (t.value == "function") {
                 auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
 
-                // TODO: parameters
                 expect_next_token(lexer::TokenType::LeftParen);
-                expect_next_token(lexer::TokenType::RightParen);
+
+                std::vector<std::string> parameters;
+
+                auto next = next_token();
+
+                while (next.type != lexer::TokenType::RightParen) {
+                    assert(next.type == lexer::TokenType::Identifier);
+                    parameters.push_back(next.value);
+
+                    next = next_token();
+                    if (next.type == lexer::TokenType::Comma) {
+                        next = next_token();
+                    }
+                }
+
+                assert(tokens[index].type == lexer::TokenType::RightParen);
 
                 next_token();
                 auto body = parse_statement();
 
-                return std::make_shared<ast::FunctionDeclarationStatement>(identifier_token.value, body);
+                return std::make_shared<ast::FunctionDeclarationStatement>(identifier_token.value, parameters, body);
             } else if (t.value == "true" || t.value == "false") {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
                 expect_next_token(lexer::TokenType::Semicolon);

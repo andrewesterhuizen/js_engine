@@ -9,11 +9,12 @@
 
 int main() {
     std::string source = R"(
-        var x = 1;
-        x++;
-        console.log(x);
-        x--;
-        console.log(x);
+        function log(message, shouldBeUndefined) {
+            console.log(shouldBeUndefined);
+            console.log(message);
+        }
+
+        log("hello from argument");
 )";
 
     // get tokens

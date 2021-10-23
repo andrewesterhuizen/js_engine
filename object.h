@@ -67,6 +67,7 @@ struct Function : public Object {
     Function() : Object(ObjectType::Function) {}
     bool is_builtin;
     std::function<Object*(std::vector<Object*>)> builtin_func;
+    std::vector<std::string> parameters;
     std::shared_ptr<ast::Statement> body;
     bool is_truthy() override { return true; }
     std::string to_string() override { return "Function"; }

@@ -106,9 +106,10 @@ struct ForStatement : public Statement {
 };
 
 struct FunctionDeclarationStatement : public Statement {
-    FunctionDeclarationStatement(std::string identifier, std::shared_ptr<Statement> body)
-            : Statement(StatementType::FunctionDeclaration), identifier(identifier), body(body) {}
+    FunctionDeclarationStatement(std::string identifier, std::vector<std::string> parameters, std::shared_ptr<Statement> body)
+            : Statement(StatementType::FunctionDeclaration), identifier(identifier), parameters(parameters), body(body) {}
     std::string identifier;
+    std::vector<std::string> parameters;
     std::shared_ptr<Statement> body;
     nlohmann::json to_json() override;
 };
