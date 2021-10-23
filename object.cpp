@@ -41,4 +41,9 @@ Undefined* ObjectManager::new_undefined() {
     return new Undefined();
 }
 
+Number* Object::as_number() {
+    assert(type() == ObjectType::Number);
+    return static_cast<Number*>(this);
+}
+
 }

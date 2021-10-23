@@ -19,6 +19,7 @@ class Parser {
     void unexpected_token();
     bool next_token_type_is_end_of_expression();
     bool token_type_is_end_of_expression(lexer::TokenType type);
+    bool token_type_is_assignment_operator(lexer::TokenType type);
 
     std::shared_ptr<ast::Expression> parse_assignment_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Expression> parse_call_expression(std::shared_ptr<ast::Expression> callee);

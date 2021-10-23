@@ -40,6 +40,14 @@ std::string operator_to_string(Operator op) {
             return "++";
         case Operator::Decrement:
             return "--";
+        case Operator::AdditionAssignment:
+            return "+=";
+        case Operator::SubtractionAssignment:
+            return "-=";
+        case Operator::MultiplicationAssignment:
+            return "*=";
+        case Operator::DivisionAssignment:
+            return "/=";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -60,6 +68,14 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::Modulo;
         case lexer::TokenType::EqualTo:
             return Operator::EqualTo;
+        case lexer::TokenType::AdditionAssignment:
+            return Operator::AdditionAssignment;
+        case lexer::TokenType::SubtractionAssignment:
+            return Operator::SubtractionAssignment;
+        case lexer::TokenType::MultiplicationAssignment:
+            return Operator::MultiplicationAssignment;
+        case lexer::TokenType::DivisionAssignment:
+            return Operator::DivisionAssignment;
         case lexer::TokenType::EqualToStrict:
             return Operator::EqualToStrict;
         case lexer::TokenType::And:

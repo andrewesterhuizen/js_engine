@@ -44,6 +44,14 @@ std::string token_type_to_string(TokenType type) {
             return "Percent";
         case TokenType::Increment:
             return "Increment";
+        case TokenType::AdditionAssignment:
+            return "AdditionAssignment";
+        case TokenType::SubtractionAssignment:
+            return "SubtractionAssignment";
+        case TokenType::MultiplicationAssignment:
+            return "MultiplicationAssignment";
+        case TokenType::DivisionAssignment:
+            return "DivisionAssignment";
         case TokenType::Decrement:
             return "Decrement";
         case TokenType::Semicolon:

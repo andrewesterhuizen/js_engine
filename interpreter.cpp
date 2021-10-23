@@ -156,17 +156,46 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
         case ast::ExpressionType::Assignment: {
             auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
-            assert(e->op == ast::Operator::Equals);
 
             auto right = execute(e->right);
 
             if (e->left->type == ast::ExpressionType::Identifier) {
                 auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
                 auto right = execute(e->right);
-                return set_variable(left->name, right);
+
+                if (e->op == ast::Operator::Equals) {
+                    return set_variable(left->name, right);
+                }
+
+                auto left_number = get_variable(left->name)->as_number();
+                auto right_number = right->as_number();
+
+                auto result = object_manager.new_number(0);
+
+                switch (e->op) {
+                    case ast::Operator::AdditionAssignment:
+                        result->value = left_number->value + right_number->value;
+                        break;
+                    case ast::Operator::SubtractionAssignment:
+                        result->value = left_number->value - right_number->value;
+                        break;
+                    case ast::Operator::MultiplicationAssignment:
+                        result->value = left_number->value * right_number->value;
+                        break;
+                    case ast::Operator::DivisionAssignment:
+                        result->value = left_number->value / right_number->value;
+                        break;
+                    default:
+                        assert(false);
+                }
+
+                return set_variable(left->name, result);
             }
 
             if (e->left->type == ast::ExpressionType::Member) {
+                // TODO: handle arithmetic assignments
+                assert(e->op == ast::Operator::Equals);
+                
                 auto left = std::static_pointer_cast<ast::MemberExpression>(e->left);
 
                 if (left->is_computed) {

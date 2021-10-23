@@ -17,6 +17,8 @@ enum class ObjectType {
     Array
 };
 
+struct Number;
+
 struct Object {
     Object(ObjectType object_type) : object_type(object_type) {}
     ObjectType object_type = ObjectType::Object;
@@ -24,6 +26,8 @@ struct Object {
 
     ObjectType type() { return object_type; }
     virtual bool is_truthy() { return true; }
+
+    Number* as_number();
 
     virtual std::string to_string() {
         nlohmann::json j;

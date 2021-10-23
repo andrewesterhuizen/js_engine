@@ -58,6 +58,14 @@ bool Parser::token_type_is_end_of_expression(lexer::TokenType type) {
            type == lexer::TokenType::Comma;
 }
 
+bool Parser::token_type_is_assignment_operator(lexer::TokenType type) {
+    return type == lexer::TokenType::Equals ||
+           type == lexer::TokenType::AdditionAssignment ||
+           type == lexer::TokenType::SubtractionAssignment ||
+           type == lexer::TokenType::MultiplicationAssignment ||
+           type == lexer::TokenType::DivisionAssignment;
+}
+
 std::shared_ptr<ast::Expression> Parser::parse_member_expression(std::shared_ptr<ast::Expression> left) {
     auto next = tokens[index];
 
@@ -116,12 +124,14 @@ std::shared_ptr<ast::Expression> Parser::parse_call_expression(std::shared_ptr<a
 
 std::shared_ptr<ast::Expression> Parser::parse_assignment_expression(std::shared_ptr<ast::Expression> left) {
     auto next = tokens[index];
-    assert(next.type == lexer::TokenType::Equals);
+
+    assert(token_type_is_assignment_operator(next.type));
+    auto op = ast::token_type_to_operator(next.type);
 
     next_token();
     auto right = parse_expression();
 
-    return std::make_shared<ast::AssignmentExpression>(left, right, ast::Operator::Equals);
+    return std::make_shared<ast::AssignmentExpression>(left, right, op);
 }
 
 // TODO: the logic here does not need to be identifier specific
@@ -169,7 +179,7 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
     }
 
     // assignment
-    if (next.type == lexer::TokenType::Equals) {
+    if (token_type_is_assignment_operator(next.type)) {
         left = parse_assignment_expression(left);
 
         if (peek_next_token().type == lexer::TokenType::Semicolon) {
