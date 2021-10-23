@@ -154,7 +154,11 @@ nlohmann::json IfStatement::to_json() {
     j["type"] = "IfStatement";
     j["test"] = test->to_json();
     j["consequent"] = consequent->to_json();
-    j["alternative"] = alternative->to_json();
+    if (alternative != nullptr) {
+        j["alternative"] = alternative->to_json();
+    } else {
+        j["alternative"] = nullptr;
+    }
     return j;
 }
 

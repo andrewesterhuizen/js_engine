@@ -360,6 +360,8 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 if (next.type == lexer::TokenType::Keyword && next.value == "else") {
                     next_token();
                     alternative = parse_statement();
+                } else {
+                    backup();
                 }
 
                 return std::make_shared<ast::IfStatement>(test, consequent, alternative);

@@ -9,11 +9,13 @@
 
 int main() {
     std::string source = R"(
-    var x = 1;
-    x += 1;
-    console.log(x);
-    x -= 1;
-    console.log(x);
+        if(1) {
+            console.log("this should work without crashing");
+        }
+
+        if(1 || 2) {
+            console.log("this should work without crashing too");
+        }
 )";
 
     // get tokens
