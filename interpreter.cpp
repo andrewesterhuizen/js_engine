@@ -195,7 +195,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             if (e->left->type == ast::ExpressionType::Member) {
                 // TODO: handle arithmetic assignments
                 assert(e->op == ast::Operator::Equals);
-                
+
                 auto left = std::static_pointer_cast<ast::MemberExpression>(e->left);
 
                 if (left->is_computed) {
@@ -337,6 +337,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                             return object_manager.new_boolean(left->value <= right->value);
                         }
                         case ast::Operator::Equals:
+                        case ast::Operator::AdditionAssignment:
+                        case ast::Operator::SubtractionAssignment:
+                        case ast::Operator::MultiplicationAssignment:
+                        case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
                         case ast::Operator::Decrement: {
                             assert(false);
@@ -382,6 +386,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                         case ast::Operator::Divide:
                         case ast::Operator::Modulo:
                         case ast::Operator::Equals:
+                        case ast::Operator::AdditionAssignment:
+                        case ast::Operator::SubtractionAssignment:
+                        case ast::Operator::MultiplicationAssignment:
+                        case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
                         case ast::Operator::Decrement: {
                             assert(false);
