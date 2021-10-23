@@ -28,9 +28,11 @@ enum class Operator {
 };
 
 Operator token_type_to_operator(lexer::TokenType token_type);
+bool token_type_is_operator(lexer::TokenType token_type);
 std::string operator_to_string(Operator op);
 
 enum class ExpressionType {
+    VariableDeclaration,
     Call,
     Member,
     Identifier,
@@ -48,8 +50,9 @@ enum class StatementType {
     Block,
     If,
     FunctionDeclaration,
-    VariableDeclaration,
-    While
+    VariableDeclaration, // TODO: this should be removed and replace with expression version
+    While,
+    For
 };
 
 struct Statement {
@@ -88,6 +91,17 @@ struct IfStatement : public Statement {
     nlohmann::json to_json() override;
 };
 
+struct ForStatement : public Statement {
+    ForStatement(std::shared_ptr<Expression> init, std::shared_ptr<Expression> test, std::shared_ptr<Expression> update,
+                 std::shared_ptr<Statement> body)
+            : Statement(StatementType::For), init(init), test(test), update(update), body(body) {}
+    std::shared_ptr<Expression> init;
+    std::shared_ptr<Expression> test;
+    std::shared_ptr<Expression> update;
+    std::shared_ptr<Statement> body;
+    nlohmann::json to_json() override;
+};
+
 struct FunctionDeclarationStatement : public Statement {
     FunctionDeclarationStatement(std::string identifier, std::shared_ptr<Statement> body)
             : Statement(StatementType::FunctionDeclaration), identifier(identifier), body(body) {}
@@ -117,6 +131,14 @@ struct CallExpression : public Expression {
             : Expression(ExpressionType::Call), callee(callee) {}
     std::shared_ptr<Expression> callee;
     std::vector<std::shared_ptr<Expression>> arguments;
+    nlohmann::json to_json() override;
+};
+
+struct VariableDeclarationExpression : public Expression {
+    VariableDeclarationExpression(std::string identifier, std::shared_ptr<Expression> value)
+    : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value) {}
+    std::string identifier;
+    std::shared_ptr<Expression> value;
     nlohmann::json to_json() override;
 };
 

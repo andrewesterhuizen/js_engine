@@ -80,6 +80,29 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
     }
 }
 
+bool token_type_is_operator(lexer::TokenType token_type) {
+    switch (token_type) {
+        case lexer::TokenType::Plus:
+        case lexer::TokenType::Minus:
+        case lexer::TokenType::Asterisk:
+        case lexer::TokenType::Slash:
+        case lexer::TokenType::Percent:
+        case lexer::TokenType::EqualTo:
+        case lexer::TokenType::EqualToStrict:
+        case lexer::TokenType::And:
+        case lexer::TokenType::Or:
+        case lexer::TokenType::NotEqualTo:
+        case lexer::TokenType::GreaterThan:
+        case lexer::TokenType::GreaterThanOrEqualTo:
+        case lexer::TokenType::LessThan:
+        case lexer::TokenType::LessThanOrEqualTo:
+        case lexer::TokenType::Equals:
+            return true;
+        default:
+            return false;
+    }
+}
+
 nlohmann::json ExpressionStatement::to_json() {
     nlohmann::json j;
     j["type"] = "ExpressionStatement";
@@ -106,6 +129,16 @@ nlohmann::json IfStatement::to_json() {
     j["test"] = test->to_json();
     j["consequent"] = consequent->to_json();
     j["alternative"] = alternative->to_json();
+    return j;
+}
+
+nlohmann::json ForStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "ForStatement";
+    j["init"] = init->to_json();
+    j["test"] = test->to_json();
+    j["update"] = update->to_json();
+    j["body"] = body->to_json();
     return j;
 }
 
@@ -200,6 +233,14 @@ nlohmann::json AssignmentExpression::to_json() {
     j["left"] = left->to_json();
     j["right"] = right->to_json();
     j["op"] = operator_to_string(op);
+    return j;
+}
+
+nlohmann::json VariableDeclarationExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "VariableDeclarationExpression";
+    j["identifier"] = identifier;
+    j["value"] = value->to_json();
     return j;
 }
 

@@ -25,7 +25,16 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
         case ast::StatementType::While: {
             auto s = std::static_pointer_cast<ast::WhileStatement>(statement);
 
-            while(execute(s->test)->is_truthy()) {
+            while (execute(s->test)->is_truthy()) {
+                execute(s->body);
+            }
+
+            return object_manager.new_undefined();
+        }
+        case ast::StatementType::For: {
+            auto s = std::static_pointer_cast<ast::ForStatement>(statement);
+
+            for (execute(s->init); execute(s->test)->is_truthy(); execute(s->update)) {
                 execute(s->body);
             }
 
@@ -133,6 +142,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             }
 
             assert(false);
+        }
+        case ast::ExpressionType::VariableDeclaration: {
+            auto e = std::static_pointer_cast<ast::VariableDeclarationExpression>(expression);
+            return declare_variable(e->identifier, execute(e->value));
         }
         case ast::ExpressionType::Assignment: {
             auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
