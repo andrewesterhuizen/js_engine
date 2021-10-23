@@ -93,24 +93,16 @@ char Lexer::next_char() {
     return source[++index];
 }
 
-char Lexer::peek_next_char() {
-    if (index + 1 > source.length()) {
-        return 0;
-    }
-
-    return source[index + 1];
-}
-
-bool Lexer::is_single_char_token(char c) {
-    return single_char_tokens.find(c) != single_char_tokens.end();
-}
-
-std::string Lexer::get_text_until_next_token_or_whitespace() {
+std::string Lexer::get_rest_of_line() {
     std::string text;
-    auto c = source[index];
-    while (std::isalnum(c)) {
+
+    auto i = index;
+
+    auto c = source[i];
+    while (c != '\n') {
         text += c;
-        c = next_char();
+        i++;
+        c = source[i];
 
         if (c == '\0') break;
     }
@@ -127,141 +119,31 @@ void Lexer::skip_whitespace() {
     }
 }
 
-std::string Lexer::get_string(char quote_type) {
-    std::string text;
-    auto c = source[index];
-    while (c != quote_type && c != '\n') {
-        text += c;
-        c = next_char();
-
-        if (c == '\0') break;
-    }
-
-    return text;
-}
-
-void Lexer::get_number() {
-    std::string text;
-
-    bool seen_decimal_point = false;
-    auto c = source[index];
-
-    while (isdigit(c) || (!seen_decimal_point && c == '.')) {
-        if (c == '.') {
-            seen_decimal_point = true;
-        }
-
-        text += c;
-        c = next_char();
-
-        if (c == '\0') break;
-    }
-
-    emit_token(TokenType::Number, text);
-}
-
 void Lexer::get_token() {
     skip_whitespace();
 
-    auto c = source[index];
+    auto text = get_rest_of_line();
 
-    if (auto entry = single_char_tokens.find(c); entry != single_char_tokens.end()) {
-        emit_token(entry->second, std::string(1, entry->first));
-        next_char();
-    } else
-        // TODO: clean up these logical operator conditionals
-    if (c == '=') {
-        if (peek_next_char() == '=') {
-            next_char();
-            if (peek_next_char() == '=') {
-                next_char();
-                emit_token(TokenType::EqualToStrict, "===");
-            } else {
-                emit_token(TokenType::EqualTo, "==");
+    std::smatch match;
+
+    for (auto p: patterns) {
+        auto is_match = std::regex_search(text, match, p.pattern);
+        if (is_match) {
+            auto matched_text = match.str();
+            auto match_length = matched_text.length();
+
+            if (p.token_type == TokenType::String) {
+                matched_text = matched_text.substr(1, match_length - 2);
             }
-        } else {
-            emit_token(TokenType::Equals, "=");
-        }
 
-        next_char();
-    } else if (c == '>') {
-        if (peek_next_char() == '=') {
-            next_char();
-            emit_token(TokenType::GreaterThanOrEqualTo, ">=");
-        } else {
-            emit_token(TokenType::GreaterThan, ">");
+            emit_token(p.token_type, matched_text);
+            index += match_length;
+            return;
         }
-
-        next_char();
-    } else if (c == '<') {
-        if (peek_next_char() == '=') {
-            next_char();
-            emit_token(TokenType::LessThanOrEqualTo, "<=");
-        } else {
-            emit_token(TokenType::LessThan, "<");
-        }
-
-        next_char();
-    } else if (c == '&') {
-        if (peek_next_char() == '&') {
-            next_char();
-            emit_token(TokenType::And, "&&");
-        } else {
-            assert(false);
-        }
-
-        next_char();
-    } else if (c == '|') {
-        if (peek_next_char() == '|') {
-            next_char();
-            emit_token(TokenType::Or, "||");
-        } else {
-            assert(false);
-        }
-
-        next_char();
-    } else if (c == '!') {
-        if (peek_next_char() == '=') {
-            next_char();
-            emit_token(TokenType::NotEqualTo, "!=");
-        } else {
-            assert(false);
-        }
-
-        next_char();
-    } else if (c == '+') {
-        if (peek_next_char() == '+') {
-            next_char();
-            emit_token(TokenType::Increment, "++");
-        } else {
-            emit_token(TokenType::Plus, "+");
-        }
-
-        next_char();
-    } else if (c == '-') {
-        if (peek_next_char() == '-') {
-            next_char();
-            emit_token(TokenType::Decrement, "--");
-        } else {
-            emit_token(TokenType::Minus, "-");
-        }
-
-        next_char();
-    } else if (c == '"') {
-        next_char();
-        auto text = get_string(c);
-        emit_token(TokenType::String, text);
-        next_char();
-    } else if (isdigit(c)) {
-        get_number();
-    } else if (isalnum(c)) {
-        auto text = get_text_until_next_token_or_whitespace();
-        auto is_keyword = keywords.find(text) != keywords.end();
-        emit_token(is_keyword ? TokenType::Keyword : TokenType::Identifier, text);
-    } else {
-        std::cerr << "unexpected token: " << c << "\n";
-        assert(false);
     }
+
+    std::cerr << "unexpected token: " << text << "\n";
+    assert(false);
 }
 
 std::vector<Token> Lexer::get_tokens(std::string src) {

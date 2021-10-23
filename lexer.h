@@ -2,9 +2,8 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 #include <iostream>
+#include <regex>
 
 #include "json.hpp"
 
@@ -53,38 +52,56 @@ struct Token {
     nlohmann::json to_json();
 };
 
+struct Pattern {
+    std::regex pattern;
+    TokenType token_type;
+    Pattern(std::string pattern, TokenType token_type) : pattern(pattern), token_type(token_type) {}
+};
+
 class Lexer {
     std::vector<Token> tokens;
     int index = 0;
     std::string source;
 
-    std::unordered_map<char, TokenType> single_char_tokens = {
-            {'\0', TokenType::EndOfFile},
-            {';',  TokenType::Semicolon},
-            {':',  TokenType::Colon},
-            {',',  TokenType::Comma},
-            {'*',  TokenType::Asterisk},
-            {'/',  TokenType::Slash},
-            {'%',  TokenType::Percent},
-            {'(',  TokenType::LeftParen},
-            {')',  TokenType::RightParen},
-            {'{',  TokenType::LeftBrace},
-            {'}',  TokenType::RightBrace},
-            {'[',  TokenType::LeftBracket},
-            {']',  TokenType::RightBracket},
-            {'.',  TokenType::Dot},
+    std::vector<Pattern> patterns = {
+            {"^(var|if|function|true|false|while|for)", TokenType::Keyword},
+            {"^[a-zA-Z|$|_]\\w*",                       TokenType::Identifier},
+            {"^\".*\"",                                 TokenType::String},
+            {"^\\d[.\\d+]*",                            TokenType::Number},
+            {"^===",                                    TokenType::EqualToStrict},
+            {"^==",                                     TokenType::EqualTo},
+            {"^=",                                      TokenType::Equals},
+            {"^>=",                                     TokenType::GreaterThanOrEqualTo},
+            {"^>",                                      TokenType::GreaterThan},
+            {"^<=",                                     TokenType::LessThanOrEqualTo},
+            {"^<",                                      TokenType::LessThan},
+            {"^&&",                                     TokenType::And},
+            {"^\\|\\|",                                 TokenType::Or},
+            {"^!=",                                     TokenType::NotEqualTo},
+            {"^\\+\\+",                                 TokenType::Increment},
+            {"^\\+",                                    TokenType::Plus},
+            {"^--",                                     TokenType::Decrement},
+            {"^-",                                      TokenType::Minus},
+            {"^;",                                      TokenType::Semicolon},
+            {"^:",                                      TokenType::Colon},
+            {"^,",                                      TokenType::Comma},
+            {"^\\*",                                    TokenType::Asterisk},
+            {"^/",                                      TokenType::Slash},
+            {"^%",                                      TokenType::Percent},
+            {"^\\(",                                    TokenType::LeftParen},
+            {"^\\)",                                    TokenType::RightParen},
+            {"^\\{",                                    TokenType::LeftBrace},
+            {"^\\}",                                    TokenType::RightBrace},
+            {"^\\[",                                    TokenType::LeftBracket},
+            {"^\\]",                                    TokenType::RightBracket},
+            {"^\\.",                                    TokenType::Dot},
+            {"^\\0",                                    TokenType::EndOfFile},
     };
-
-    std::unordered_set<std::string> keywords = {"var", "if", "else", "function", "true", "false", "while", "for"};
 
     void emit_token(TokenType type, std::string value);
     char next_char();
-    char peek_next_char();
-    bool is_single_char_token(char c);
-    std::string get_text_until_next_token_or_whitespace();
+    std::string get_rest_of_line();
     void skip_whitespace();
-    std::string get_string(char quote_type);
-    void get_number();
     void get_token();
 public:
     std::vector<Token> get_tokens(std::string src);
