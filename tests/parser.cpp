@@ -81,7 +81,31 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
             auto n = std::static_pointer_cast<ast::NumberLiteralExpression>(el);
             REQUIRE(n->value == i + 1);
         }
+    }
 
+    SECTION("object literals") {
+        auto source = R"(({ x: 123, y: 234});)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::Object);
+        auto expression = std::static_pointer_cast<ast::ObjectExpression>(expression_statement->expression);
+        REQUIRE(expression->properties.size() == 2);
+
+        auto x = expression->properties.find("x");
+        REQUIRE(x != expression->properties.end());
+        REQUIRE(x->second->type == ast::ExpressionType::NumberLiteral);
+        auto xn = std::static_pointer_cast<ast::NumberLiteralExpression>(x->second);
+        REQUIRE(xn->value == 123);
+
+        auto y = expression->properties.find("y");
+        REQUIRE(y != expression->properties.end());
+        REQUIRE(y->second->type == ast::ExpressionType::NumberLiteral);
+        auto yn = std::static_pointer_cast<ast::NumberLiteralExpression>(y->second);
+        REQUIRE(yn->value == 234);
     }
 }
 
