@@ -129,6 +129,112 @@ bool token_type_is_operator(lexer::TokenType token_type) {
     }
 }
 
+template<typename T>
+T* Expression::as() {
+    return static_cast<T*>(this);
+}
+
+NumberLiteralExpression* Expression::as_number_literal() {
+    assert(type == ExpressionType::NumberLiteral);
+    return as<NumberLiteralExpression>();
+}
+
+StringLiteralExpression* Expression::as_string_literal() {
+    assert(type == ExpressionType::StringLiteral);
+    return as<StringLiteralExpression>();
+}
+
+BooleanLiteralExpression* Expression::as_boolean_literal() {
+    assert(type == ExpressionType::BooleanLiteral);
+    return as<BooleanLiteralExpression>();
+}
+
+ArrayExpression* Expression::as_array() {
+    assert(type == ExpressionType::Array);
+    return as<ArrayExpression>();
+}
+
+ObjectExpression* Expression::as_object() {
+    assert(type == ExpressionType::Object);
+    return as<ObjectExpression>();
+}
+
+IdentifierExpression* Expression::as_identifier() {
+    assert(type == ExpressionType::Identifier);
+    return as<IdentifierExpression>();
+}
+
+CallExpression* Expression::as_call() {
+    assert(type == ExpressionType::Call);
+    return as<CallExpression>();
+}
+
+VariableDeclarationExpression* Expression::as_variable_declaration() {
+    assert(type == ExpressionType::VariableDeclaration);
+    return as<VariableDeclarationExpression>();
+}
+
+MemberExpression* Expression::as_member() {
+    assert(type == ExpressionType::Member);
+    return as<MemberExpression>();
+}
+
+BinaryExpression* Expression::as_binary() {
+    assert(type == ExpressionType::Binary);
+    return as<BinaryExpression>();
+}
+
+AssignmentExpression* Expression::as_assignment() {
+    assert(type == ExpressionType::Assignment);
+    return as<AssignmentExpression>();
+}
+
+UpdateExpression* Expression::as_update() {
+    assert(type == ExpressionType::Update);
+    return as<UpdateExpression>();
+}
+
+
+template<typename T>
+T* Statement::as() {
+    return static_cast<T*>(this);
+}
+
+ExpressionStatement* Statement::as_expression_statement() {
+    assert(type == StatementType::Expression);
+    return as<ExpressionStatement>();
+}
+
+BlockStatement* Statement::as_block() {
+    assert(type == StatementType::Block);
+    return as<BlockStatement>();
+}
+
+IfStatement* Statement::as_if() {
+    assert(type == StatementType::If);
+    return as<IfStatement>();
+}
+
+FunctionDeclarationStatement* Statement::as_function_declaration() {
+    assert(type == StatementType::FunctionDeclaration);
+    return as<FunctionDeclarationStatement>();
+}
+
+VariableDeclarationStatement* Statement::as_variable_declaration() {
+    assert(type == StatementType::VariableDeclaration);
+    return as<VariableDeclarationStatement>();
+}
+
+WhileStatement* Statement::as_while() {
+    assert(type == StatementType::While);
+    return as<WhileStatement>();
+}
+
+ForStatement* Statement::as_for() {
+    assert(type == StatementType::For);
+    return as<ForStatement>();
+}
+
 nlohmann::json ExpressionStatement::to_json() {
     nlohmann::json j;
     j["type"] = "ExpressionStatement";

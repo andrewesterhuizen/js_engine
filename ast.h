@@ -62,16 +62,63 @@ enum class StatementType {
     For
 };
 
+struct ExpressionStatement;
+struct BlockStatement;
+struct IfStatement;
+struct FunctionDeclarationStatement;
+struct VariableDeclarationStatement;
+struct WhileStatement;
+struct ForStatement;
+
+struct NumberLiteralExpression;
+struct StringLiteralExpression;
+struct BooleanLiteralExpression;
+struct ArrayExpression;
+struct ObjectExpression;
+struct IdentifierExpression;
+struct CallExpression;
+struct VariableDeclarationExpression;
+struct CallExpression;
+struct MemberExpression;
+struct BinaryExpression;
+struct AssignmentExpression;
+struct UpdateExpression;
+
 struct Statement {
     Statement(StatementType type) : type(type) {}
     StatementType type;
     virtual nlohmann::json to_json() = 0;
+
+    template<typename T>
+    T* as();
+    ExpressionStatement* as_expression_statement();
+    BlockStatement* as_block();
+    IfStatement* as_if();
+    FunctionDeclarationStatement* as_function_declaration();
+    VariableDeclarationStatement* as_variable_declaration();
+    WhileStatement* as_while();
+    ForStatement* as_for();
 };
 
 struct Expression {
     Expression(ExpressionType type) : type(type) {}
     ExpressionType type;
     virtual nlohmann::json to_json() = 0;
+
+    template<typename T>
+    T* as();
+    NumberLiteralExpression* as_number_literal();
+    StringLiteralExpression* as_string_literal();
+    BooleanLiteralExpression* as_boolean_literal();
+    ArrayExpression* as_array();
+    ObjectExpression* as_object();
+    IdentifierExpression* as_identifier();
+    CallExpression* as_call();
+    VariableDeclarationExpression* as_variable_declaration();
+    MemberExpression* as_member();
+    BinaryExpression* as_binary();
+    AssignmentExpression* as_assignment();
+    UpdateExpression* as_update();
 };
 
 struct ExpressionStatement : public Statement {

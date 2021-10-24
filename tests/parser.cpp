@@ -16,11 +16,9 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::NumberLiteral);
-        auto expression = std::static_pointer_cast<ast::NumberLiteralExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_number_literal();
         REQUIRE(expression->value == 123);
     }
 
@@ -29,11 +27,9 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::StringLiteral);
-        auto expression = std::static_pointer_cast<ast::StringLiteralExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_string_literal();
         REQUIRE(expression->value == "a test string");
     }
 
@@ -42,11 +38,9 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::BooleanLiteral);
-        auto expression = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_boolean_literal();
         REQUIRE(expression->value == true);
     }
 
@@ -55,11 +49,9 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::BooleanLiteral);
-        auto expression = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_boolean_literal();
         REQUIRE(expression->value == false);
     }
 
@@ -68,17 +60,14 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::Array);
-        auto expression = std::static_pointer_cast<ast::ArrayExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_array();
         REQUIRE(expression->elements.size() == 3);
 
         for (auto i = 0; i < 3; i++) {
             auto el = expression->elements[i];
-            REQUIRE(el->type == ast::ExpressionType::NumberLiteral);
-            auto n = std::static_pointer_cast<ast::NumberLiteralExpression>(el);
+            auto n = el->as_number_literal();
             REQUIRE(n->value == i + 1);
         }
     }
@@ -88,23 +77,19 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+        auto expression_statement = ast.body[0]->as_expression_statement();
 
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::Object);
-        auto expression = std::static_pointer_cast<ast::ObjectExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_object();
         REQUIRE(expression->properties.size() == 2);
 
         auto x = expression->properties.find("x");
         REQUIRE(x != expression->properties.end());
-        REQUIRE(x->second->type == ast::ExpressionType::NumberLiteral);
-        auto xn = std::static_pointer_cast<ast::NumberLiteralExpression>(x->second);
+        auto xn = x->second->as_number_literal();
         REQUIRE(xn->value == 123);
 
         auto y = expression->properties.find("y");
         REQUIRE(y != expression->properties.end());
-        REQUIRE(y->second->type == ast::ExpressionType::NumberLiteral);
-        auto yn = std::static_pointer_cast<ast::NumberLiteralExpression>(y->second);
+        auto yn = y->second->as_number_literal();
         REQUIRE(yn->value == 234);
     }
 }
@@ -118,8 +103,7 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
 
         auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-        REQUIRE(expression_statement->expression->type == ast::ExpressionType::NumberLiteral);
-        auto expression = std::static_pointer_cast<ast::NumberLiteralExpression>(expression_statement->expression);
+        auto expression = expression_statement->expression->as_number_literal();
         REQUIRE(expression->value == 123);
     }
 }

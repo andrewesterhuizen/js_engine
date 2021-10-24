@@ -7,11 +7,11 @@ namespace interpreter {
 object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
     switch (statement->type) {
         case ast::StatementType::Expression: {
-            auto s = std::static_pointer_cast<ast::ExpressionStatement>(statement);
+            auto s = statement->as_expression_statement();
             return execute(s->expression);
         }
         case ast::StatementType::If: {
-            auto s = std::static_pointer_cast<ast::IfStatement>(statement);
+            auto s = statement->as_if();
 
             auto test = execute(s->test);
             if (test->is_truthy()) {
@@ -23,7 +23,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             return object_manager.new_undefined();
         }
         case ast::StatementType::While: {
-            auto s = std::static_pointer_cast<ast::WhileStatement>(statement);
+            auto s = statement->as_while();
 
             while (execute(s->test)->is_truthy()) {
                 execute(s->body);
@@ -32,7 +32,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             return object_manager.new_undefined();
         }
         case ast::StatementType::For: {
-            auto s = std::static_pointer_cast<ast::ForStatement>(statement);
+            auto s = statement->as_for();
 
             for (execute(s->init); execute(s->test)->is_truthy(); execute(s->update)) {
                 execute(s->body);
@@ -41,7 +41,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             return object_manager.new_undefined();
         }
         case ast::StatementType::Block: {
-            auto s = std::static_pointer_cast<ast::BlockStatement>(statement);
+            auto s = statement->as_block();
             object::Object* final_value = nullptr;
 
             for (auto s: s->body) {
@@ -55,7 +55,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             return final_value;
         }
         case ast::StatementType::FunctionDeclaration: {
-            auto s = std::static_pointer_cast<ast::FunctionDeclarationStatement>(statement);
+            auto s = statement->as_function_declaration();
 
             auto func = object_manager.new_function();
             func->is_builtin = false;
@@ -66,7 +66,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
         }
         case ast::StatementType::VariableDeclaration: {
             // TODO: variable declarations need to run earlier to allow hoisting
-            auto s = std::static_pointer_cast<ast::VariableDeclarationStatement>(statement);
+            auto s = statement->as_variable_declaration();
             return declare_variable(s->identifier, execute(s->value));
         }
     }
@@ -78,7 +78,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
 object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
     switch (expression->type) {
         case ast::ExpressionType::Call: {
-            auto e = std::static_pointer_cast<ast::CallExpression>(expression);
+            auto e = expression->as_call();
 
             auto func_obj = execute(e->callee);
             assert(func_obj->type() == object::ObjectType::Function);
@@ -109,13 +109,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             return return_value;
         }
         case ast::ExpressionType::Member: {
-            auto e = std::static_pointer_cast<ast::MemberExpression>(expression);
+            auto e = expression->as_member();
 
-            assert(e->object->type == ast::ExpressionType::Identifier);
-            auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->object);
-
+            auto left = e->object->as_identifier();
             auto obj = get_variable(left->name);
-
 
             if (e->is_computed) {
                 object::Object* property;
@@ -136,8 +133,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
                 return object_manager.new_undefined();
             } else {
-                assert(e->property->type == ast::ExpressionType::Identifier);
-                auto right = std::static_pointer_cast<ast::IdentifierExpression>(e->property);
+                auto right = e->property->as_identifier();
 
                 auto property = obj->get_property(right->name);
 
@@ -151,16 +147,16 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             assert(false);
         }
         case ast::ExpressionType::VariableDeclaration: {
-            auto e = std::static_pointer_cast<ast::VariableDeclarationExpression>(expression);
+            auto e = expression->as_variable_declaration();
             return declare_variable(e->identifier, execute(e->value));
         }
         case ast::ExpressionType::Assignment: {
-            auto e = std::static_pointer_cast<ast::AssignmentExpression>(expression);
+            auto e = expression->as_assignment();
 
             auto right = execute(e->right);
 
             if (e->left->type == ast::ExpressionType::Identifier) {
-                auto left = std::static_pointer_cast<ast::IdentifierExpression>(e->left);
+                auto left = e->left->as_identifier();
                 auto right = execute(e->right);
 
                 if (e->op == ast::Operator::Equals) {
@@ -196,11 +192,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                 // TODO: handle arithmetic assignments
                 assert(e->op == ast::Operator::Equals);
 
-                auto left = std::static_pointer_cast<ast::MemberExpression>(e->left);
+                auto left = e->left->as_member();
 
                 if (left->is_computed) {
-                    assert(left->object->type == ast::ExpressionType::Identifier);
-                    auto object_name = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
+                    auto object_name = left->object->as_identifier();
                     auto object = get_variable(object_name->name);
 
                     auto property = execute(left->property);
@@ -218,13 +213,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
                     assert(false);
                 } else {
-                    assert(left->object->type == ast::ExpressionType::Identifier);
-                    assert(left->property->type == ast::ExpressionType::Identifier);
-
-                    auto left_id = std::static_pointer_cast<ast::IdentifierExpression>(left->object);
+                    auto left_id = left->object->as_identifier();
                     auto object = get_variable(left_id->name);
 
-                    auto right_id = std::static_pointer_cast<ast::IdentifierExpression>(left->property);
+                    auto right_id = left->property->as_identifier();
 
                     object->properties[right_id->name] = right;
 
@@ -235,23 +227,19 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             assert(false);
         }
         case ast::ExpressionType::Identifier: {
-            auto e = std::static_pointer_cast<ast::IdentifierExpression>(expression);
-            return get_variable(e->name);
+            return get_variable(expression->as_identifier()->name);
         }
         case ast::ExpressionType::NumberLiteral: {
-            auto e = std::static_pointer_cast<ast::NumberLiteralExpression>(expression);
-            return object_manager.new_number(e->value);
+            return object_manager.new_number(expression->as_number_literal()->value);
         }
         case ast::ExpressionType::StringLiteral: {
-            auto e = std::static_pointer_cast<ast::StringLiteralExpression>(expression);
-            return object_manager.new_string(e->value);
+            return object_manager.new_string(expression->as_string_literal()->value);
         }
         case ast::ExpressionType::BooleanLiteral: {
-            auto e = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression);
-            return object_manager.new_boolean(e->value);
+            return object_manager.new_boolean(expression->as_boolean_literal()->value);
         }
         case ast::ExpressionType::Object: {
-            auto e = std::static_pointer_cast<ast::ObjectExpression>(expression);
+            auto e = expression->as_object();
             auto object = object_manager.new_object();
 
             for (auto p: e->properties) {
@@ -261,7 +249,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             return object;
         }
         case ast::ExpressionType::Array: {
-            auto e = std::static_pointer_cast<ast::ArrayExpression>(expression);
+            auto e = expression->as_array();
             auto array = object_manager.new_array();
 
             for (auto e: e->elements) {
@@ -271,7 +259,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             return array;
         }
         case ast::ExpressionType::Binary: {
-            auto e = std::static_pointer_cast<ast::BinaryExpression>(expression);
+            auto e = expression->as_binary();
 
             auto right_result = execute(e->right);
             auto left_result = execute(e->left);
@@ -401,11 +389,11 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             }
         }
         case ast::ExpressionType::Update: {
-            auto e = std::static_pointer_cast<ast::UpdateExpression>(expression);
+            auto e = expression->as_update();
             assert(e->op == ast::Operator::Increment || e->op == ast::Operator::Decrement);
             assert(e->argument->type == ast::ExpressionType::Identifier);
 
-            auto identifier = std::static_pointer_cast<ast::IdentifierExpression>(e->argument);
+            auto identifier = e->argument->as_identifier();
             auto value_object = get_variable(identifier->name);
             assert(value_object->type() == object::ObjectType::Number);
             auto value_number = static_cast<object::Number*>(value_object);
