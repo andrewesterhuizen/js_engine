@@ -55,6 +55,7 @@ bool Parser::token_type_is_end_of_expression(lexer::TokenType type) {
            type == lexer::TokenType::RightParen ||
            type == lexer::TokenType::RightBrace ||
            type == lexer::TokenType::RightBracket ||
+           type == lexer::TokenType::Colon ||
            type == lexer::TokenType::Comma;
 }
 
@@ -134,11 +135,7 @@ std::shared_ptr<ast::Expression> Parser::parse_assignment_expression(std::shared
     return std::make_shared<ast::AssignmentExpression>(left, right, op);
 }
 
-// TODO: the logic here does not need to be identifier specific
-std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
-    auto t = tokens[index];
-
-    std::shared_ptr<ast::Expression> left = std::make_shared<ast::IdentifierExpression>(t.value);
+std::shared_ptr<ast::Expression> Parser::parse_expression_recurse(std::shared_ptr<ast::Expression> left) {
     if (peek_next_token().type == lexer::TokenType::Semicolon) {
         return left;
     }
@@ -204,6 +201,22 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
         next = next_token();
     }
 
+    // ternary
+    if(next.type == lexer::TokenType::QuestionMark) {
+        next_token();
+        auto consequent = parse_expression();
+        expect_next_token(lexer::TokenType::Colon);
+        next_token();
+        auto alternative = parse_expression();
+        left = std::make_shared<ast::TernaryExpression>(left, consequent, alternative);
+
+        if (peek_next_token().type == lexer::TokenType::Semicolon) {
+            return left;
+        }
+
+        next = next_token();
+    }
+
     // binary
     if (ast::token_type_is_operator(next.type)) {
         left = parse_binary_expression(left);
@@ -229,33 +242,15 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
     switch (t.type) {
         case lexer::TokenType::Number: {
             auto left = std::make_shared<ast::NumberLiteralExpression>(std::stod(t.value));
-
-            if (next_token_type_is_end_of_expression()) {
-                return left;
-            }
-
-            auto next = next_token();
-
-            auto op = ast::token_type_to_operator(next.type);
-
-            next_token();
-            auto right = parse_expression();
-
-            return std::make_shared<ast::BinaryExpression>(left, right, op);
+            return parse_expression_recurse(left);
         }
         case lexer::TokenType::String: {
             auto left = std::make_shared<ast::StringLiteralExpression>(t.value);
-
-            auto next = next_token();
-            if (token_type_is_end_of_expression(next.type)) {
-                backup();
-                return left;
-            }
-
-            assert(false);
+            return parse_expression_recurse(left);
         }
         case lexer::TokenType::Identifier: {
-            return parse_identifier_expression();
+            auto left = std::make_shared<ast::IdentifierExpression>(t.value);
+            return parse_expression_recurse(left);
         }
         case lexer::TokenType::LeftBrace: {
             auto next = next_token();

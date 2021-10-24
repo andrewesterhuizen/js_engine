@@ -124,6 +124,24 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         auto expression = expression_statement->expression->as_identifier();
         REQUIRE(expression->name == "test");
     }
+
+    SECTION("ternary") {
+        auto source = R"(1 ? 2 : 3;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_ternary();
+
+        auto test = expression->test->as_number_literal();
+        REQUIRE(test->value == 1);
+
+        auto consequent = expression->consequent->as_number_literal();
+        REQUIRE(consequent->value == 2);
+
+        auto alternative = expression->alternative->as_number_literal();
+        REQUIRE(alternative->value == 3);
+    }
 }
 
 

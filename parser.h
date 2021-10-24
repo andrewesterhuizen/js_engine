@@ -25,7 +25,7 @@ class Parser {
     std::shared_ptr<ast::Expression> parse_call_expression(std::shared_ptr<ast::Expression> callee);
     std::shared_ptr<ast::Expression> parse_member_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Expression> parse_binary_expression(std::shared_ptr<ast::Expression> left);
-    std::shared_ptr<ast::Expression> parse_identifier_expression();
+    std::shared_ptr<ast::Expression> parse_expression_recurse(std::shared_ptr<ast::Expression> left); // TODO: this logic should be merged into parse_expression
     std::shared_ptr<ast::Expression> parse_expression();
     std::shared_ptr<ast::Statement> parse_statement();
     std::vector<std::shared_ptr<ast::Statement>> parse_statements();

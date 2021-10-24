@@ -1,11 +1,2 @@
-function factorial(number) {
-  let result = 1;
-
-  for (let i = 2; i <= number; i += 1) {
-    result *= i;
-  }
-
-  return result;
-}
-
-console.log(factorial(50));
+console.log(1 ? true : false);
+console.log(0 ? true : false);

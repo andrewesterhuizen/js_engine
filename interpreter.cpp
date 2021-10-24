@@ -427,6 +427,15 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
             return object_manager.new_number(e->is_prefix ? new_value : value_number->value);
         }
+        case ast::ExpressionType::Ternary: {
+            auto e = expression->as_ternary();
+
+            if (execute(e->test)->is_truthy()) {
+                return execute(e->consequent);
+            } else {
+                return execute(e->alternative);
+            }
+        }
     }
 
     std::cerr << "unable to execute expression type: " << expression->

@@ -45,6 +45,7 @@ enum class TokenType {
     LeftBracket,
     RightBracket,
     Dot,
+    QuestionMark,
     EndOfFile
 };
 
@@ -105,6 +106,7 @@ class Lexer {
             {"^\\[",                  TokenType::LeftBracket},
             {"^\\]",                  TokenType::RightBracket},
             {"^\\.",                  TokenType::Dot},
+            {"^\\?",                  TokenType::QuestionMark},
             {"^\\0",                  TokenType::EndOfFile},
     };
 

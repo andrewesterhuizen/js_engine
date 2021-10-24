@@ -74,6 +74,8 @@ std::string token_type_to_string(TokenType type) {
             return "RightBracket";
         case TokenType::Dot:
             return "Dot";
+            case TokenType::QuestionMark:
+            return "QuestionMark";
         case TokenType::EndOfFile:
             return "EndOfFile";
     }

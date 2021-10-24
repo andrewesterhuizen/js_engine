@@ -130,9 +130,9 @@ bool token_type_is_operator(lexer::TokenType token_type) {
 }
 
 VariableType get_variable_type(std::string type) {
-    if(type == "var") return VariableType::Var;
-    if(type == "let") return VariableType::Let;
-    if(type == "const") return VariableType::Const;
+    if (type == "var") return VariableType::Var;
+    if (type == "let") return VariableType::Let;
+    if (type == "const") return VariableType::Const;
 
     std::cerr << "invalid variable type " << type << "\n";
     assert(false);
@@ -201,6 +201,11 @@ AssignmentExpression* Expression::as_assignment() {
 UpdateExpression* Expression::as_update() {
     assert(type == ExpressionType::Update);
     return as<UpdateExpression>();
+}
+
+TernaryExpression* Expression::as_ternary() {
+    assert(type == ExpressionType::Ternary);
+    return as<TernaryExpression>();
 }
 
 
@@ -441,6 +446,16 @@ nlohmann::json ArrayExpression::to_json() {
 
     return j;
 }
+
+nlohmann::json TernaryExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "TernaryExpression";
+    j["test"] = test->to_json();
+    j["consequent"] = consequent->to_json();
+    j["alternative"] = alternative->to_json();
+    return j;
+}
+
 
 nlohmann::json Program::to_json() {
 

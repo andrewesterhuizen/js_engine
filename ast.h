@@ -57,7 +57,8 @@ enum class ExpressionType {
     Assignment,
     Object,
     Array,
-    Update
+    Update,
+    Ternary
 };
 
 enum class StatementType {
@@ -93,6 +94,7 @@ struct MemberExpression;
 struct BinaryExpression;
 struct AssignmentExpression;
 struct UpdateExpression;
+struct TernaryExpression;
 
 struct Statement {
     Statement(StatementType type) : type(type) {}
@@ -130,6 +132,7 @@ struct Expression {
     BinaryExpression* as_binary();
     AssignmentExpression* as_assignment();
     UpdateExpression* as_update();
+    TernaryExpression* as_ternary();
 };
 
 struct ExpressionStatement : public Statement {
@@ -288,6 +291,16 @@ struct ObjectExpression : public Expression {
 struct ArrayExpression : public Expression {
     ArrayExpression() : Expression(ExpressionType::Array) {}
     std::vector<std::shared_ptr<Expression>> elements;
+    nlohmann::json to_json() override;
+};
+
+struct TernaryExpression : public Expression {
+    TernaryExpression(std::shared_ptr<Expression> test, std::shared_ptr<Expression> consequent,
+                      std::shared_ptr<Expression> alternative)
+            : Expression(ExpressionType::Ternary), test(test), consequent(consequent), alternative(alternative) {}
+    std::shared_ptr<Expression> test;
+    std::shared_ptr<Expression> consequent;
+    std::shared_ptr<Expression> alternative;
     nlohmann::json to_json() override;
 };
 
