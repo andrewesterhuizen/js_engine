@@ -28,6 +28,7 @@ enum class Operator {
     And,
     Or,
     NotEqualTo,
+    NotEqualToStrict,
     GreaterThan,
     GreaterThanOrEqualTo,
     LessThan,

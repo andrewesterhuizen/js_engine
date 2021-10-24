@@ -18,6 +18,8 @@ std::string token_type_to_string(TokenType type) {
             return "EqualTo";
         case TokenType::EqualToStrict:
             return "EqualToStrict";
+        case TokenType::NotEqualToStrict:
+            return "NotEqualToStrict";
         case TokenType::And:
             return "And";
         case TokenType::Or:

@@ -80,6 +80,8 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::DivisionAssignment;
         case lexer::TokenType::EqualToStrict:
             return Operator::EqualToStrict;
+        case lexer::TokenType::NotEqualToStrict:
+            return Operator::NotEqualToStrict;
         case lexer::TokenType::And:
             return Operator::And;
         case lexer::TokenType::Or:
@@ -128,6 +130,7 @@ bool token_type_is_operator(lexer::TokenType token_type) {
         case lexer::TokenType::Increment:
         case lexer::TokenType::Decrement:
         case lexer::TokenType::Exponentiation:
+        case lexer::TokenType::NotEqualToStrict:
             return true;
         default:
             return false;

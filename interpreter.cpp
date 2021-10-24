@@ -336,6 +336,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                             assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_boolean(left->value != right->value);
                         }
+                        case ast::Operator::NotEqualToStrict: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_boolean(left->value != right->value);
+                        }
                         case ast::Operator::GreaterThan: {
                             assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_boolean(left->value > right->value);
@@ -382,6 +386,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                             return object_manager.new_boolean(left->value || right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualTo: {
+                            return object_manager.new_boolean(left->value != right_result->is_truthy());
+                        }
+                        case ast::Operator::NotEqualToStrict: {
                             return object_manager.new_boolean(left->value != right_result->is_truthy());
                         }
                         case ast::Operator::GreaterThan: {
@@ -540,6 +547,10 @@ Interpreter::Interpreter() {
     Math->register_native_method("round", [&](std::vector<object::Object*> args) {
         auto arg = args[0]->as_number();
         return object_manager.new_number(std::roundf(arg->value));
+    });
+    Math->register_native_method("sqrt", [&](std::vector<object::Object*> args) {
+        auto arg = args[0]->as_number();
+        return object_manager.new_number(std::sqrtf(arg->value));
     });
 
     current_scope()->set_variable("Math", Math);
