@@ -121,6 +121,10 @@ std::shared_ptr<ast::Expression> Parser::parse_variable_declaration_expression()
     std::vector<std::string> identifiers;
     identifiers.push_back(expect_next_token(lexer::TokenType::Identifier).value);
 
+    if (peek_next_token().type == lexer::TokenType::Semicolon) {
+        return std::make_shared<ast::VariableDeclarationExpression>(identifiers, nullptr, type);
+    }
+
     next = next_token();
     while (next.type != lexer::TokenType::Equals) {
         if (next.type != lexer::TokenType::Comma) {

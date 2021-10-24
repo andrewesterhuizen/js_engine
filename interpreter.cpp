@@ -167,7 +167,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
         case ast::ExpressionType::VariableDeclaration: {
             auto e = expression->as_variable_declaration();
-            auto value = execute(e->value);
+            object::Object* value = e->value != nullptr ? execute(e->value) : object_manager.new_undefined();
             for (auto id: e->identifiers) {
                 declare_variable(id, value);
             }
