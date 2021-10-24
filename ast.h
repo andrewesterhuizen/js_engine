@@ -21,6 +21,7 @@ enum class Operator {
     SubtractionAssignment,
     MultiplicationAssignment,
     DivisionAssignment,
+    Exponentiation,
     Equals,
     EqualTo,
     EqualToStrict,

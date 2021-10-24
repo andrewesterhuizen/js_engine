@@ -48,6 +48,8 @@ std::string operator_to_string(Operator op) {
             return "*=";
         case Operator::DivisionAssignment:
             return "/=";
+        case Operator::Exponentiation:
+            return "**";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -98,6 +100,8 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::Increment;
         case lexer::TokenType::Decrement:
             return Operator::Decrement;
+        case lexer::TokenType::Exponentiation:
+            return Operator::Exponentiation;
         default:
             std::cerr << "missing case for TokenType in token_type_to_operator";
             assert(false);
@@ -123,6 +127,7 @@ bool token_type_is_operator(lexer::TokenType token_type) {
         case lexer::TokenType::Equals:
         case lexer::TokenType::Increment:
         case lexer::TokenType::Decrement:
+        case lexer::TokenType::Exponentiation:
             return true;
         default:
             return false;

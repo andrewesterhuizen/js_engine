@@ -40,6 +40,8 @@ std::string token_type_to_string(TokenType type) {
             return "Slash";
         case TokenType::Asterisk:
             return "Asterisk";
+        case TokenType::Exponentiation:
+            return "Exponentiation";
         case TokenType::Percent:
             return "Percent";
         case TokenType::Increment:

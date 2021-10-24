@@ -1,15 +1,21 @@
-function euclideanAlgorithm(originalA, originalB) {
-  // Make input numbers positive.
-  const a = Math.abs(originalA);
-  const b = Math.abs(originalB);
+function squareRoot(number, tolerance) {
+  if (number < 0) {
+    return 0;
+  }
 
-  // To make algorithm work faster instead of subtracting one number from the other
-  // we may use modulo operation.
-  return (b === 0) ? a : euclideanAlgorithm(b, a % b);
+  if (number === 0) {
+    return 0;
+  }
+
+  let root = 1;
+
+  const requiredDelta = 1 / (10 ** tolerance);
+
+  while (Math.abs(number - (root ** 2)) > requiredDelta) {
+    root -= ((root ** 2) - number) / (2 * root);
+  }
+
+  return Math.round(root * (10 ** tolerance)) / (10 ** tolerance);
 }
 
-function leastCommonMultiple(a, b) {
-  return ((a === 0) || (b === 0)) ? 0 : Math.abs(a * b) / euclideanAlgorithm(a, b);
-}
-
-console.log(leastCommonMultiple(5,4));
+console.log(squareRoot(2, 4));

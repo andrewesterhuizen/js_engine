@@ -314,6 +314,10 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                             assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_number(std::fmod(left->value, right->value));
                         }
+                        case ast::Operator::Exponentiation: {
+                            assert(right_result->type() == object::ObjectType::Number);
+                            return object_manager.new_number(std::powf(left->value, right->value));
+                        }
                         case ast::Operator::EqualTo: {
                             assert(right_result->type() == object::ObjectType::Number);
                             return object_manager.new_boolean(left->value == right->value);
@@ -403,7 +407,8 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                         case ast::Operator::MultiplicationAssignment:
                         case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
-                        case ast::Operator::Decrement: {
+                        case ast::Operator::Decrement:
+                        case ast::Operator::Exponentiation: {
                             assert(false);
                         }
                     }
@@ -531,6 +536,10 @@ Interpreter::Interpreter() {
     Math->register_native_method("abs", [&](std::vector<object::Object*> args) {
         auto arg = args[0]->as_number();
         return object_manager.new_number(std::fabs(arg->value));
+    });
+    Math->register_native_method("round", [&](std::vector<object::Object*> args) {
+        auto arg = args[0]->as_number();
+        return object_manager.new_number(std::roundf(arg->value));
     });
 
     current_scope()->set_variable("Math", Math);
