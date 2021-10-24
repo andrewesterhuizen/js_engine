@@ -513,10 +513,7 @@ Interpreter::Interpreter() {
     scopes.push_back(Scope{});
 
     auto console = object_manager.new_object();
-
-    auto log = object_manager.new_function();
-    log->is_builtin = true;
-    log->builtin_func = [&](std::vector<object::Object*> args) {
+    console->register_native_method("log", [&](std::vector<object::Object*> args) {
         std::string out;
 
         for (auto arg: args) {
@@ -526,11 +523,17 @@ Interpreter::Interpreter() {
         std::cout << out << "\n";
 
         return object_manager.new_undefined();
-    };
-
-    console->properties["log"] = log;
+    });
 
     current_scope()->set_variable("console", console);
+
+    auto Math = object_manager.new_object();
+    Math->register_native_method("abs", [&](std::vector<object::Object*> args) {
+        auto arg = args[0]->as_number();
+        return object_manager.new_number(std::fabs(arg->value));
+    });
+
+    current_scope()->set_variable("Math", Math);
 }
 
 }

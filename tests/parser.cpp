@@ -125,6 +125,22 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         REQUIRE(expression->name == "test");
     }
 
+    SECTION("binary expression with operands in parentheses") {
+        auto source = R"((1) + (2);)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_binary();
+
+        auto left = expression->left->as_number_literal();
+        REQUIRE(left->value == 1);
+        auto right = expression->right->as_number_literal();
+        REQUIRE(right->value == 2);
+
+        REQUIRE(expression->op == ast::Operator::Plus);
+    }
+
     SECTION("ternary") {
         auto source = R"(1 ? 2 : 3;)";
         auto ast = get_ast(source);

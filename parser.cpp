@@ -241,6 +241,12 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
     auto t = tokens[index];
 
     switch (t.type) {
+        case lexer::TokenType::LeftParen: {
+            next_token();
+            auto left = parse_expression();
+            expect_next_token(lexer::TokenType::RightParen);
+            return parse_expression_recurse(left);
+        }
         case lexer::TokenType::Number: {
             auto left = std::make_shared<ast::NumberLiteralExpression>(std::stod(t.value));
             return parse_expression_recurse(left);
@@ -452,9 +458,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
             return s;
         }
         case lexer::TokenType::LeftParen: {
-            next_token();
             auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
-            expect_next_token(lexer::TokenType::RightParen);
             expect_next_token(lexer::TokenType::Semicolon);
             return s;
         }
