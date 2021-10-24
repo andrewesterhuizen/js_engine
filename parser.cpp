@@ -435,6 +435,8 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
             assert(false);
         }
         case lexer::TokenType::Number:
+        case lexer::TokenType::String:
+        case lexer::TokenType::LeftBracket:
         case lexer::TokenType::Identifier: {
             auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
             expect_next_token(lexer::TokenType::Semicolon);
@@ -460,6 +462,8 @@ std::vector<std::shared_ptr<ast::Statement>> Parser::parse_statements() {
         switch (t.type) {
             case lexer::TokenType::Keyword:
             case lexer::TokenType::Number:
+            case lexer::TokenType::String:
+            case lexer::TokenType::LeftBracket:
             case lexer::TokenType::Identifier:
                 statements.push_back(parse_statement());
                 break;

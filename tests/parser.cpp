@@ -3,21 +3,84 @@
 #include "../lexer.h"
 #include "../parser.h"
 
-TEST_CASE("Parser parses number literal", "[parser][ast]") {
-    auto source = R"(123;)";
-
+ast::Program get_ast(std::string source) {
     lexer::Lexer l;
     auto tokens = l.get_tokens(source);
-
     parser::Parser p;
-    auto ast = p.parse(tokens);
+    return p.parse(tokens);
+}
 
-    REQUIRE(ast.body.size() == 1);
-    REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+TEST_CASE("Parser parses literals", "[parser][ast]") {
+    SECTION("number literals") {
+        auto source = R"(123;)";
+        auto ast = get_ast(source);
 
-    auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
-    REQUIRE(expression_statement->expression->type == ast::ExpressionType::NumberLiteral);
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
 
-    auto expression = std::static_pointer_cast<ast::NumberLiteralExpression>(expression_statement->expression);
-    REQUIRE(expression->value == 123);
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::NumberLiteral);
+        auto expression = std::static_pointer_cast<ast::NumberLiteralExpression>(expression_statement->expression);
+        REQUIRE(expression->value == 123);
+    }
+
+    SECTION("string literals") {
+        auto source = R"("a test string";)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::StringLiteral);
+        auto expression = std::static_pointer_cast<ast::StringLiteralExpression>(expression_statement->expression);
+        REQUIRE(expression->value == "a test string");
+    }
+
+    SECTION("boolean literals: true") {
+        auto source = R"(true;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::BooleanLiteral);
+        auto expression = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression_statement->expression);
+        REQUIRE(expression->value == true);
+    }
+
+    SECTION("boolean literals: false") {
+        auto source = R"(false;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::BooleanLiteral);
+        auto expression = std::static_pointer_cast<ast::BooleanLiteralExpression>(expression_statement->expression);
+        REQUIRE(expression->value == false);
+    }
+
+    SECTION("array literals") {
+        auto source = R"([1,2,3];)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::Array);
+        auto expression = std::static_pointer_cast<ast::ArrayExpression>(expression_statement->expression);
+        REQUIRE(expression->elements.size() == 3);
+
+        for (auto i = 0; i < 3; i++) {
+            auto el = expression->elements[i];
+            REQUIRE(el->type == ast::ExpressionType::NumberLiteral);
+            auto n = std::static_pointer_cast<ast::NumberLiteralExpression>(el);
+            REQUIRE(n->value == i + 1);
+        }
+
+    }
 }
