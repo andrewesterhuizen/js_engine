@@ -34,6 +34,7 @@ lexer::Token Parser::expect_next_token(lexer::TokenType type) {
                   << lexer::token_type_to_string(type)
                   << " and got "
                   << lexer::token_type_to_string(t.type)
+                  << " at " << t.line << ":" << t.column
                   << "\n";
         assert(false);
     }
@@ -43,7 +44,7 @@ lexer::Token Parser::expect_next_token(lexer::TokenType type) {
 
 void Parser::unexpected_token() {
     auto t = tokens[index];
-    std::cerr << "unexpected token " << t.to_json().dump(4) << "\n";
+    std::cerr << "unexpected token \"" << t.value << "\" at " << t.line << ":" << t.column << "\n";
 }
 
 bool Parser::next_token_type_is_end_of_expression() {
@@ -202,7 +203,7 @@ std::shared_ptr<ast::Expression> Parser::parse_expression_recurse(std::shared_pt
     }
 
     // ternary
-    if(next.type == lexer::TokenType::QuestionMark) {
+    if (next.type == lexer::TokenType::QuestionMark) {
         next_token();
         auto consequent = parse_expression();
         expect_next_token(lexer::TokenType::Colon);

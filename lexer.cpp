@@ -74,10 +74,12 @@ std::string token_type_to_string(TokenType type) {
             return "RightBracket";
         case TokenType::Dot:
             return "Dot";
-            case TokenType::QuestionMark:
+        case TokenType::QuestionMark:
             return "QuestionMark";
         case TokenType::EndOfFile:
             return "EndOfFile";
+        case TokenType::NewLine:
+            return "NewLine";
     }
 
     std::cout << "missing string for TokenType\n";
@@ -88,11 +90,13 @@ nlohmann::json Token::to_json() {
     nlohmann::json j;
     j["type"] = token_type_to_string(type);
     j["value"] = value;
+    j["line"] = line;
+    j["column"] = column;
     return j;
 }
 
 void Lexer::emit_token(TokenType type, std::string value) {
-    tokens.push_back(Token{type, value});
+    tokens.push_back(Token{type, value, line, column});
 }
 
 char Lexer::next_char() {
@@ -123,8 +127,13 @@ std::string Lexer::get_rest_of_line() {
 void Lexer::skip_whitespace() {
     auto c = source[index];
     while (c == ' ' || c == '\n') {
-        c = next_char();
+        column++;
+        if (c == '\n') {
+            line++;
+            column = 0;
+        }
 
+        c = next_char();
         if (c == '\0') break;
     }
 }
@@ -134,8 +143,10 @@ void Lexer::get_token() {
 
     auto text = get_rest_of_line();
 
-    if(text.starts_with("//")) {
+    if (text.starts_with("//")) {
         index += text.length();
+        line++;
+        column = 0;
         return;
     }
 
@@ -151,13 +162,21 @@ void Lexer::get_token() {
                 matched_text = matched_text.substr(1, match_length - 2);
             }
 
+            column += match_length;
+
             emit_token(p.token_type, matched_text);
+
+            if (p.token_type == TokenType::NewLine) {
+                line++;
+                column = 0;
+            }
+
             index += match_length;
             return;
         }
     }
 
-    std::cerr << "unexpected token: " << text << "\n";
+    std::cerr << "unexpected token: " << text << " at " << line << ":" << column << "\n";
     assert(false);
 }
 

@@ -46,6 +46,7 @@ enum class TokenType {
     RightBracket,
     Dot,
     QuestionMark,
+    NewLine,
     EndOfFile
 };
 
@@ -54,6 +55,8 @@ std::string token_type_to_string(TokenType type);
 struct Token {
     TokenType type;
     std::string value;
+    int line;
+    int column;
     nlohmann::json to_json();
 };
 
@@ -67,6 +70,9 @@ class Lexer {
     std::vector<Token> tokens;
     int index = 0;
     std::string source;
+
+    int line = 1;
+    int column = 0;
 
     const std::string keywords_regex = "^(var|if|else|function|true|false|while|for|return|let|const)";
 
@@ -107,6 +113,7 @@ class Lexer {
             {"^\\]",                  TokenType::RightBracket},
             {"^\\.",                  TokenType::Dot},
             {"^\\?",                  TokenType::QuestionMark},
+            {"^\n",                   TokenType::NewLine},
             {"^\\0",                  TokenType::EndOfFile},
     };
 
