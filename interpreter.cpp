@@ -438,7 +438,6 @@ void Interpreter::run(ast::Program &program) {
         return;
     }
 
-    std::cout << final_value->to_string() << "\n";
 }
 
 Scope* Interpreter::current_scope() {

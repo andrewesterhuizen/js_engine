@@ -1,5 +1,8 @@
 #include <iostream>
 #include <string>
+#include <set>
+#include <fstream>
+#include <sstream>
 
 #include "json.hpp"
 #include "ast.h"
@@ -7,35 +10,58 @@
 #include "lexer.h"
 #include "parser.h"
 
-int main() {
-    std::string source = R"(
-        if(1) {
-            console.log("this should work without crashing");
-        }
+int main(int argc, char* argv[]) {
+    if(argc < 2) {
+        std::cerr << "no file specified\n";
+        return 1;
+    }
 
-        if(1 || 2) {
-            console.log("this should work without crashing too");
-        }
-)";
+    auto file_name = argv[1];
+    std::set<std::string> args(argv + 1, argv + argc);
+
+    for (auto arg: args) {
+        std::cout << arg << "\n";
+    }
+
+    auto output_tokens = args.find("--output-tokens") != args.end();
+    auto output_ast = args.find("--output-ast") != args.end();
+
+    std::ifstream file(file_name);
+    if(!file.is_open()) {
+        std::cerr << "unable to open file " << file_name << "\n";
+        return 1;
+    }
+
+    std::stringstream source_buffer;
+    source_buffer << file.rdbuf();
+    auto source = source_buffer.str();
 
     // get tokens
     lexer::Lexer l;
     auto tokens = l.get_tokens(source);
 
-    // print tokens
-    nlohmann::json j;
-    std::vector<nlohmann::json> out;
-    for (auto t: tokens) {
-        out.push_back(t.to_json());
-    }
+    if (output_tokens) {
+        // print tokens
+        nlohmann::json j;
+        std::vector<nlohmann::json> out;
+        for (auto t: tokens) {
+            out.push_back(t.to_json());
+        }
 
-    j = out;
-    std::cout << j.dump(4) << "\n";
+        j = out;
+        std::cout << j.dump(4) << "\n";
+
+        return 0;
+    }
 
     // parse tokens
     parser::Parser p;
     auto ast = p.parse(tokens);
-    std::cout << ast.to_json().dump(4) << "\n";
+    
+    if (output_ast) {
+        std::cout << ast.to_json().dump(4) << "\n";
+        return 0;
+    }
 
     // execute ast
     interpreter::Interpreter i;

@@ -186,8 +186,7 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
             return left;
         }
 
-        if (token_type_is_end_of_expression(tokens[index].type)) {
-            backup();
+        if (token_type_is_end_of_expression(peek_next_token().type)) {
             return left;
         }
 
@@ -210,6 +209,10 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
         left = parse_binary_expression(left);
 
         if (peek_next_token().type == lexer::TokenType::Semicolon) {
+            return left;
+        }
+
+        if (token_type_is_end_of_expression(peek_next_token().type)) {
             return left;
         }
 
@@ -452,7 +455,7 @@ std::vector<std::shared_ptr<ast::Statement>> Parser::parse_statements() {
 
     auto t = tokens[index];
 
-    while (t.type != lexer::TokenType::EndOfFile) {
+    while (index < tokens.size() && t.type != lexer::TokenType::EndOfFile) {
         switch (t.type) {
             case lexer::TokenType::Keyword:
             case lexer::TokenType::Identifier:
