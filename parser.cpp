@@ -442,6 +442,13 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
             expect_next_token(lexer::TokenType::Semicolon);
             return s;
         }
+        case lexer::TokenType::LeftParen: {
+            next_token();
+            auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
+            expect_next_token(lexer::TokenType::RightParen);
+            expect_next_token(lexer::TokenType::Semicolon);
+            return s;
+        }
         case lexer::TokenType::LeftBrace: {
             auto s = std::make_shared<ast::BlockStatement>(parse_statements());
             expect_next_token(lexer::TokenType::RightBrace);
@@ -460,6 +467,7 @@ std::vector<std::shared_ptr<ast::Statement>> Parser::parse_statements() {
 
     while (index < tokens.size() && t.type != lexer::TokenType::EndOfFile) {
         switch (t.type) {
+            case lexer::TokenType::LeftParen:
             case lexer::TokenType::Keyword:
             case lexer::TokenType::Number:
             case lexer::TokenType::String:

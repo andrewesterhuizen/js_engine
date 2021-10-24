@@ -84,3 +84,18 @@ TEST_CASE("Parser parses literals", "[parser][ast]") {
 
     }
 }
+
+TEST_CASE("Parser parses expressions", "[parser][ast]") {
+    SECTION("expressions in parentheses") {
+        auto source = R"((123);)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
+
+        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        REQUIRE(expression_statement->expression->type == ast::ExpressionType::NumberLiteral);
+        auto expression = std::static_pointer_cast<ast::NumberLiteralExpression>(expression_statement->expression);
+        REQUIRE(expression->value == 123);
+    }
+}
