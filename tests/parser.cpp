@@ -137,9 +137,32 @@ TEST_CASE("Parser parses statements", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        auto expression_statement = ast.body[0]->as_while();
-        auto test = expression_statement->test->as_identifier();
+        auto s = ast.body[0]->as_while();
+        auto test = s->test->as_identifier();
         REQUIRE(test->name == "test");
-        REQUIRE(expression_statement->body->type == ast::StatementType::Block);
+        REQUIRE(s->body->type == ast::StatementType::Block);
+    }
+
+    SECTION("return statement") {
+        auto source = R"(
+            return 123;
+        )";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto s = ast.body[0]->as_return();
+        auto n = s->argument->as_number_literal();
+        REQUIRE(n->value == 123);
+    }
+
+    SECTION("return statement without value") {
+        auto source = R"(
+            return;
+        )";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto s = ast.body[0]->as_return();
+        REQUIRE(s->argument == nullptr);
     }
 }

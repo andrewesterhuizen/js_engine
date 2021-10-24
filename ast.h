@@ -59,7 +59,8 @@ enum class StatementType {
     FunctionDeclaration,
     VariableDeclaration, // TODO: this should be removed and replace with expression version
     While,
-    For
+    For,
+    Return
 };
 
 struct ExpressionStatement;
@@ -69,6 +70,7 @@ struct FunctionDeclarationStatement;
 struct VariableDeclarationStatement;
 struct WhileStatement;
 struct ForStatement;
+struct ReturnStatement;
 
 struct NumberLiteralExpression;
 struct StringLiteralExpression;
@@ -98,6 +100,7 @@ struct Statement {
     VariableDeclarationStatement* as_variable_declaration();
     WhileStatement* as_while();
     ForStatement* as_for();
+    ReturnStatement* as_return();
 };
 
 struct Expression {
@@ -156,9 +159,18 @@ struct ForStatement : public Statement {
     nlohmann::json to_json() override;
 };
 
+struct ReturnStatement : public Statement {
+    ReturnStatement() : Statement(StatementType::Return), argument(nullptr) {}
+    ReturnStatement(std::shared_ptr<Expression> argument) : Statement(StatementType::Return), argument(argument) {}
+    std::shared_ptr<Expression> argument;
+    nlohmann::json to_json() override;
+};
+
 struct FunctionDeclarationStatement : public Statement {
-    FunctionDeclarationStatement(std::string identifier, std::vector<std::string> parameters, std::shared_ptr<Statement> body)
-            : Statement(StatementType::FunctionDeclaration), identifier(identifier), parameters(parameters), body(body) {}
+    FunctionDeclarationStatement(std::string identifier, std::vector<std::string> parameters,
+                                 std::shared_ptr<Statement> body)
+            : Statement(StatementType::FunctionDeclaration), identifier(identifier), parameters(parameters),
+              body(body) {}
     std::string identifier;
     std::vector<std::string> parameters;
     std::shared_ptr<Statement> body;

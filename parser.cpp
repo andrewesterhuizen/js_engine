@@ -431,6 +431,16 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
                 expect_next_token(lexer::TokenType::Semicolon);
                 return s;
+            } else if (t.value == "return") {
+                auto s = std::make_shared<ast::ReturnStatement>();
+
+                auto next = next_token();
+                if (next.type != lexer::TokenType::Semicolon) {
+                    s->argument = parse_expression();
+                    expect_next_token(lexer::TokenType::Semicolon);
+                }
+
+                return s;
             }
 
             assert(false);

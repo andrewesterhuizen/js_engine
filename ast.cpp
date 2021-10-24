@@ -235,6 +235,11 @@ ForStatement* Statement::as_for() {
     return as<ForStatement>();
 }
 
+ReturnStatement* Statement::as_return() {
+    assert(type == StatementType::Return);
+    return as<ReturnStatement>();
+}
+
 nlohmann::json ExpressionStatement::to_json() {
     nlohmann::json j;
     j["type"] = "ExpressionStatement";
@@ -275,6 +280,17 @@ nlohmann::json ForStatement::to_json() {
     j["test"] = test->to_json();
     j["update"] = update->to_json();
     j["body"] = body->to_json();
+    return j;
+}
+
+nlohmann::json ReturnStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "ReturnStatement";
+    if (argument != nullptr) {
+        j["argument"] = argument->to_json();
+    } else {
+        j["argument"] = nullptr;
+    }
     return j;
 }
 

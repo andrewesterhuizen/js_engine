@@ -46,6 +46,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
 
             for (auto s: s->body) {
                 final_value = execute(s);
+                if (s->type == ast::StatementType::Return) {
+                    return final_value;
+                }
             }
 
             if (final_value == nullptr) {
@@ -68,6 +71,14 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             // TODO: variable declarations need to run earlier to allow hoisting
             auto s = statement->as_variable_declaration();
             return declare_variable(s->identifier, execute(s->value));
+        }
+        case ast::StatementType::Return: {
+            auto s = statement->as_return();
+            if (s->argument == nullptr) {
+                return object_manager.new_undefined();
+            }
+
+            return execute(s->argument);
         }
     }
 
