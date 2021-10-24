@@ -129,6 +129,15 @@ bool token_type_is_operator(lexer::TokenType token_type) {
     }
 }
 
+VariableType get_variable_type(std::string type) {
+    if(type == "var") return VariableType::Var;
+    if(type == "let") return VariableType::Let;
+    if(type == "const") return VariableType::Const;
+
+    std::cerr << "invalid variable type " << type << "\n";
+    assert(false);
+}
+
 template<typename T>
 T* Expression::as() {
     return static_cast<T*>(this);

@@ -297,14 +297,15 @@ std::shared_ptr<ast::Expression> Parser::parse_expression() {
             return ae;
         }
         case lexer::TokenType::Keyword: {
-            if (t.value == "var") {
+            if (t.value == "var" || t.value == "let" || t.value == "const") {
                 auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
                 expect_next_token(lexer::TokenType::Equals);
 
                 next_token();
                 auto value = parse_expression();
 
-                return std::make_shared<ast::VariableDeclarationExpression>(identifier_token.value, value);
+                auto type = ast::get_variable_type(t.value);
+                return std::make_shared<ast::VariableDeclarationExpression>(identifier_token.value, value, type);
             }
 
             if (t.value == "true" || t.value == "false") {
@@ -337,7 +338,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
 
     switch (t.type) {
         case lexer::TokenType::Keyword: {
-            if (t.value == "var") {
+            if (t.value == "var" || t.value == "let" || t.value == "const") {
                 auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
                 expect_next_token(lexer::TokenType::Equals);
 
@@ -346,7 +347,8 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
 
                 expect_next_token(lexer::TokenType::Semicolon);
 
-                return std::make_shared<ast::VariableDeclarationStatement>(identifier_token.value, value);
+                auto type = ast::get_variable_type(t.value);
+                return std::make_shared<ast::VariableDeclarationStatement>(identifier_token.value, value, type);
             } else if (t.value == "if") {
                 std::shared_ptr<ast::Statement> alternative = nullptr;
 

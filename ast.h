@@ -37,6 +37,14 @@ Operator token_type_to_operator(lexer::TokenType token_type);
 bool token_type_is_operator(lexer::TokenType token_type);
 std::string operator_to_string(Operator op);
 
+enum class VariableType {
+    Var,
+    Let,
+    Const
+};
+
+VariableType get_variable_type(std::string type);
+
 enum class ExpressionType {
     VariableDeclaration,
     Call,
@@ -178,10 +186,11 @@ struct FunctionDeclarationStatement : public Statement {
 };
 
 struct VariableDeclarationStatement : public Statement {
-    VariableDeclarationStatement(std::string identifier, std::shared_ptr<Expression> value)
-            : Statement(StatementType::VariableDeclaration), identifier(identifier), value(value) {}
+    VariableDeclarationStatement(std::string identifier, std::shared_ptr<Expression> value, VariableType type)
+            : Statement(StatementType::VariableDeclaration), identifier(identifier), value(value), type(type) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
+    VariableType type;
     nlohmann::json to_json() override;
 };
 
@@ -202,10 +211,11 @@ struct CallExpression : public Expression {
 };
 
 struct VariableDeclarationExpression : public Expression {
-    VariableDeclarationExpression(std::string identifier, std::shared_ptr<Expression> value)
-            : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value) {}
+    VariableDeclarationExpression(std::string identifier, std::shared_ptr<Expression> value, VariableType type)
+            : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value), type(type) {}
     std::string identifier;
     std::shared_ptr<Expression> value;
+    VariableType type;
     nlohmann::json to_json() override;
 };
 

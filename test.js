@@ -1,10 +1,11 @@
-var a = [];
-console.log(a);
-a.push(123);
-console.log(a);
-a.push(234);
-console.log(a);
-console.log(a.pop());
-console.log(a.pop());
-console.log(a);
-console.log(a.pop());
+function factorial(number) {
+  let result = 1;
+
+  for (let i = 2; i <= number; i += 1) {
+    result *= i;
+  }
+
+  return result;
+}
+
+console.log(factorial(50));
