@@ -100,10 +100,46 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         auto ast = get_ast(source);
 
         REQUIRE(ast.body.size() == 1);
-        REQUIRE(ast.body[0]->type == ast::StatementType::Expression);
-
-        auto expression_statement = std::static_pointer_cast<ast::ExpressionStatement>(ast.body[0]);
+        auto expression_statement = ast.body[0]->as_expression_statement();
         auto expression = expression_statement->expression->as_number_literal();
         REQUIRE(expression->value == 123);
+    }
+
+    SECTION("identifiers") {
+        auto source = R"(test;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_identifier();
+        REQUIRE(expression->name == "test");
+    }
+
+    SECTION("identifiers in parentheses") {
+        auto source = R"((test);)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_identifier();
+        REQUIRE(expression->name == "test");
+    }
+}
+
+
+TEST_CASE("Parser parses statements", "[parser][ast]") {
+    SECTION("while statement") {
+        auto source = R"(
+            while(test) {
+                123;
+            }
+        )";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_while();
+        auto test = expression_statement->test->as_identifier();
+        REQUIRE(test->name == "test");
+        REQUIRE(expression_statement->body->type == ast::StatementType::Block);
     }
 }

@@ -219,6 +219,7 @@ std::shared_ptr<ast::Expression> Parser::parse_identifier_expression() {
         next = next_token();
     }
 
+    backup();
     return left;
 }
 
