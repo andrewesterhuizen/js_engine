@@ -1,2 +1,5 @@
-console.log(1 ? true : false);
-console.log(0 ? true : false);
+if(0) {
+    console.log("true");
+} else {
+    console.log("false");
+}

@@ -183,4 +183,30 @@ TEST_CASE("Parser parses statements", "[parser][ast]") {
         auto s = ast.body[0]->as_return();
         REQUIRE(s->argument == nullptr);
     }
+
+    SECTION("if statement") {
+        auto source = R"(
+            if(1) {}
+        )";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto s = ast.body[0]->as_if();
+        REQUIRE(s->test->type == ast::ExpressionType::NumberLiteral);
+        REQUIRE(s->consequent->type == ast::StatementType::Block);
+        REQUIRE(s->alternative == nullptr);
+    }
+
+    SECTION("if/else statement") {
+        auto source = R"(
+            if(1) {} else {}
+        )";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto s = ast.body[0]->as_if();
+        REQUIRE(s->test->type == ast::ExpressionType::NumberLiteral);
+        REQUIRE(s->consequent->type == ast::StatementType::Block);
+        REQUIRE(s->alternative->type == ast::StatementType::Block);
+    }
 }

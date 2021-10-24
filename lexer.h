@@ -68,7 +68,7 @@ class Lexer {
     int index = 0;
     std::string source;
 
-    const std::string keywords_regex = "^(var|if|function|true|false|while|for|return|let|const)";
+    const std::string keywords_regex = "^(var|if|else|function|true|false|while|for|return|let|const)";
 
     std::vector<Pattern> patterns = {
             {keywords_regex,          TokenType::Keyword},
