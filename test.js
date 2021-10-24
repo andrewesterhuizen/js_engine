@@ -1,7 +1,10 @@
-function test() {
-    return "hello from function return";
-
-    console.log("this should never log");
-}
-
-console.log(test());
+var a = [];
+console.log(a);
+a.push(123);
+console.log(a);
+a.push(234);
+console.log(a);
+console.log(a.pop());
+console.log(a.pop());
+console.log(a);
+console.log(a.pop());

@@ -46,4 +46,12 @@ Number* Object::as_number() {
     return static_cast<Number*>(this);
 }
 
+void Object::register_native_method(std::string name, std::function<Object*(std::vector<Object*>)> handler) {
+    // TODO: don't leak
+    auto func = new Function();
+    func->is_builtin = true;
+    func->builtin_func = handler;
+    properties[name] = func;
+}
+
 }

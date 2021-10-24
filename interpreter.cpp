@@ -16,7 +16,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             auto test = execute(s->test);
             if (test->is_truthy()) {
                 return execute(s->consequent);
-            } else if (s->consequent != nullptr) {
+            } else if (s->alternative != nullptr) {
                 return execute(s->alternative);
             }
 
@@ -92,6 +92,19 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto e = expression->as_call();
 
             auto func_obj = execute(e->callee);
+            if (func_obj->type() == object::ObjectType::Undefined) {
+                assert(e->callee->type == ast::ExpressionType::Member);
+                auto callee = e->callee->as_member();
+                assert(callee->object->type == ast::ExpressionType::Identifier);
+                assert(callee->property->type == ast::ExpressionType::Identifier);
+                assert(callee->is_computed == false);
+
+                auto object_id = callee->object->as_identifier()->name;
+                auto property_id = callee->property->as_identifier()->name;
+                throw_error("TypeError", object_id + "." + property_id + " is not a function");
+                assert(false);
+            }
+
             assert(func_obj->type() == object::ObjectType::Function);
             auto func = static_cast<object::Function*>(func_obj);
 
@@ -416,7 +429,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
     }
 
-    std::cerr << "unable to execute expression type: " << expression->to_json()["type"] << "\n";
+    std::cerr << "unable to execute expression type: " << expression->
+            to_json()["type"]
+              << "\n";
     assert(false);
 }
 

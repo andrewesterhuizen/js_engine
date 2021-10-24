@@ -18,6 +18,7 @@ enum class ObjectType {
 };
 
 struct Number;
+struct Function;
 
 struct Object {
     Object(ObjectType object_type) : object_type(object_type) {}
@@ -28,6 +29,8 @@ struct Object {
     virtual bool is_truthy() { return true; }
 
     Number* as_number();
+
+    void register_native_method(std::string name, std::function<Object*(std::vector<Object*>)> handler);
 
     virtual std::string to_string() {
         nlohmann::json j;
@@ -105,7 +108,35 @@ struct Boolean : public Object {
 };
 
 struct Array : public Object {
-    Array() : Object(ObjectType::Array) {}
+    Array() : Object(ObjectType::Array) {
+        // TODO: not a good idea that these are getting created for every Array object
+        register_native_method("push", [&](std::vector<object::Object*> args) {
+          return push(args);
+        });
+
+        register_native_method("pop", [&](std::vector<object::Object*> args) {
+            return pop();
+        });
+    }
+
+    Object* push(std::vector<object::Object*> args) {
+        for (auto arg: args) {
+            elements.push_back(arg);
+        }
+
+        return get_property("length");
+    }
+
+    Object* pop() {
+        if(elements.size() == 0) {
+            return new Undefined();
+        }
+
+        auto value = elements[elements.size() - 1];
+        elements.pop_back();
+        return value;
+    }
+
     std::vector<Object*> elements;
     bool is_truthy() override { return true; }
     std::string to_string() override {
