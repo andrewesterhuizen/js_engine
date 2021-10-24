@@ -166,7 +166,24 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         REQUIRE(ast.body.size() == 1);
         auto expression_statement = ast.body[0]->as_expression_statement();
         auto expression = expression_statement->expression->as_variable_declaration();
-        REQUIRE(expression->identifier == "x");
+        REQUIRE(expression->identifiers.size() == 1);
+        REQUIRE(expression->identifiers[0] == "x");
+        REQUIRE(expression->type == ast::VariableType::Var);
+        auto value = expression->value->as_number_literal();
+        REQUIRE(value->value == 1);
+    }
+
+    SECTION("variable declaration with multiple identifiers") {
+        auto source = R"(var x, y, z = 1;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_variable_declaration();
+        REQUIRE(expression->identifiers.size() == 3);
+        REQUIRE(expression->identifiers[0] == "x");
+        REQUIRE(expression->identifiers[1] == "y");
+        REQUIRE(expression->identifiers[2] == "z");
         REQUIRE(expression->type == ast::VariableType::Var);
         auto value = expression->value->as_number_literal();
         REQUIRE(value->value == 1);

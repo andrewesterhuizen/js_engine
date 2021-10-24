@@ -167,7 +167,11 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
         case ast::ExpressionType::VariableDeclaration: {
             auto e = expression->as_variable_declaration();
-            return declare_variable(e->identifier, execute(e->value));
+            auto value = execute(e->value);
+            for (auto id: e->identifiers) {
+                declare_variable(id, value);
+            }
+            return value;
         }
         case ast::ExpressionType::Assignment: {
             auto e = expression->as_assignment();

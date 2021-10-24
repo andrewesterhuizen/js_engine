@@ -411,7 +411,7 @@ nlohmann::json AssignmentExpression::to_json() {
 nlohmann::json VariableDeclarationExpression::to_json() {
     nlohmann::json j;
     j["type"] = "VariableDeclarationExpression";
-    j["identifier"] = identifier;
+    j["identifiers"] = identifiers;
     j["value"] = value->to_json();
     return j;
 }

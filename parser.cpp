@@ -116,15 +116,27 @@ std::shared_ptr<ast::Expression> Parser::parse_assignment_expression(std::shared
 
 std::shared_ptr<ast::Expression> Parser::parse_variable_declaration_expression() {
     auto next = tokens[index];
+    auto type = ast::get_variable_type(next.value);
 
-    auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
-    expect_next_token(lexer::TokenType::Equals);
+    std::vector<std::string> identifiers;
+    identifiers.push_back(expect_next_token(lexer::TokenType::Identifier).value);
+
+    next = next_token();
+    while (next.type != lexer::TokenType::Equals) {
+        if (next.type != lexer::TokenType::Comma) {
+            break;
+        }
+
+        identifiers.push_back(expect_next_token(lexer::TokenType::Identifier).value);
+        next = next_token();
+    }
+
+    assert(next.type == lexer::TokenType::Equals);
 
     next_token();
     auto value = parse_expression(nullptr);
 
-    auto type = ast::get_variable_type(next.value);
-    return std::make_shared<ast::VariableDeclarationExpression>(identifier_token.value, value, type);
+    return std::make_shared<ast::VariableDeclarationExpression>(identifiers, value, type);
 }
 
 std::shared_ptr<ast::Expression> Parser::parse_array_expression() {

@@ -204,9 +204,9 @@ struct CallExpression : public Expression {
 };
 
 struct VariableDeclarationExpression : public Expression {
-    VariableDeclarationExpression(std::string identifier, std::shared_ptr<Expression> value, VariableType type)
-            : Expression(ExpressionType::VariableDeclaration), identifier(identifier), value(value), type(type) {}
-    std::string identifier;
+    VariableDeclarationExpression(std::vector<std::string> identifiers, std::shared_ptr<Expression> value, VariableType type)
+            : Expression(ExpressionType::VariableDeclaration), identifiers(identifiers), value(value), type(type) {}
+    std::vector<std::string> identifiers;
     std::shared_ptr<Expression> value;
     VariableType type;
     nlohmann::json to_json() override;
