@@ -341,16 +341,9 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
     switch (t.type) {
         case lexer::TokenType::Keyword: {
             if (t.value == "var" || t.value == "let" || t.value == "const") {
-                auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
-                expect_next_token(lexer::TokenType::Equals);
-
-                next_token();
-                auto value = parse_expression();
-
+                auto s = std::make_shared<ast::ExpressionStatement>(parse_expression());
                 expect_next_token(lexer::TokenType::Semicolon);
-
-                auto type = ast::get_variable_type(t.value);
-                return std::make_shared<ast::VariableDeclarationStatement>(identifier_token.value, value, type);
+                return s;
             } else if (t.value == "if") {
                 std::shared_ptr<ast::Statement> alternative = nullptr;
 

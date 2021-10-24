@@ -67,11 +67,6 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
 
             return declare_variable(s->identifier, func);
         }
-        case ast::StatementType::VariableDeclaration: {
-            // TODO: variable declarations need to run earlier to allow hoisting
-            auto s = statement->as_variable_declaration();
-            return declare_variable(s->identifier, execute(s->value));
-        }
         case ast::StatementType::Return: {
             auto s = statement->as_return();
             if (s->argument == nullptr) {

@@ -50,6 +50,8 @@ std::string operator_to_string(Operator op) {
             return "/=";
         case Operator::Exponentiation:
             return "**";
+        case Operator::NotEqualToStrict:
+            return "!==";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -242,11 +244,6 @@ FunctionDeclarationStatement* Statement::as_function_declaration() {
     return as<FunctionDeclarationStatement>();
 }
 
-VariableDeclarationStatement* Statement::as_variable_declaration() {
-    assert(type == StatementType::VariableDeclaration);
-    return as<VariableDeclarationStatement>();
-}
-
 WhileStatement* Statement::as_while() {
     assert(type == StatementType::While);
     return as<WhileStatement>();
@@ -321,14 +318,6 @@ nlohmann::json FunctionDeclarationStatement::to_json() {
     j["type"] = "FunctionDeclarationStatement";
     j["identifier"] = identifier;
     j["body"] = body->to_json();
-    return j;
-}
-
-nlohmann::json VariableDeclarationStatement::to_json() {
-    nlohmann::json j;
-    j["type"] = "VariableDeclarationStatement";
-    j["identifier"] = identifier;
-    j["value"] = value->to_json();
     return j;
 }
 

@@ -68,7 +68,6 @@ enum class StatementType {
     Block,
     If,
     FunctionDeclaration,
-    VariableDeclaration, // TODO: this should be removed and replace with expression version
     While,
     For,
     Return
@@ -78,7 +77,6 @@ struct ExpressionStatement;
 struct BlockStatement;
 struct IfStatement;
 struct FunctionDeclarationStatement;
-struct VariableDeclarationStatement;
 struct WhileStatement;
 struct ForStatement;
 struct ReturnStatement;
@@ -109,7 +107,6 @@ struct Statement {
     BlockStatement* as_block();
     IfStatement* as_if();
     FunctionDeclarationStatement* as_function_declaration();
-    VariableDeclarationStatement* as_variable_declaration();
     WhileStatement* as_while();
     ForStatement* as_for();
     ReturnStatement* as_return();
@@ -187,15 +184,6 @@ struct FunctionDeclarationStatement : public Statement {
     std::string identifier;
     std::vector<std::string> parameters;
     std::shared_ptr<Statement> body;
-    nlohmann::json to_json() override;
-};
-
-struct VariableDeclarationStatement : public Statement {
-    VariableDeclarationStatement(std::string identifier, std::shared_ptr<Expression> value, VariableType type)
-            : Statement(StatementType::VariableDeclaration), identifier(identifier), value(value), type(type) {}
-    std::string identifier;
-    std::shared_ptr<Expression> value;
-    VariableType type;
     nlohmann::json to_json() override;
 };
 
