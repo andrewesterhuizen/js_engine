@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     // parse tokens
     parser::Parser p;
     auto ast = p.parse(tokens);
-    
+
     if (output_ast) {
         std::cout << ast.to_json().dump(4) << "\n";
         return 0;

@@ -132,6 +132,11 @@ void Lexer::get_token() {
 
     auto text = get_rest_of_line();
 
+    if(text.starts_with("//")) {
+        index += text.length();
+        return;
+    }
+
     std::smatch match;
 
     for (auto p: patterns) {
