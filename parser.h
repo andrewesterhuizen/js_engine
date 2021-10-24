@@ -17,16 +17,17 @@ class Parser {
     lexer::Token peek_next_token();
     lexer::Token expect_next_token(lexer::TokenType type);
     void unexpected_token();
-    bool next_token_type_is_end_of_expression();
-    bool token_type_is_end_of_expression(lexer::TokenType type);
-    bool token_type_is_assignment_operator(lexer::TokenType type);
 
     std::shared_ptr<ast::Expression> parse_assignment_expression(std::shared_ptr<ast::Expression> left);
+    std::shared_ptr<ast::Expression> parse_variable_declaration_expression();
+    std::shared_ptr<ast::Expression> parse_array_expression();
+    std::shared_ptr<ast::Expression> parse_object_expression();
+    std::shared_ptr<ast::Expression> parse_update_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Expression> parse_call_expression(std::shared_ptr<ast::Expression> callee);
     std::shared_ptr<ast::Expression> parse_member_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Expression> parse_binary_expression(std::shared_ptr<ast::Expression> left);
-    std::shared_ptr<ast::Expression> parse_expression_recurse(std::shared_ptr<ast::Expression> left); // TODO: this logic should be merged into parse_expression
-    std::shared_ptr<ast::Expression> parse_expression();
+    std::shared_ptr<ast::Expression> parse_ternary_expression(std::shared_ptr<ast::Expression> left);
+    std::shared_ptr<ast::Expression> parse_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Statement> parse_statement();
     std::vector<std::shared_ptr<ast::Statement>> parse_statements();
 
