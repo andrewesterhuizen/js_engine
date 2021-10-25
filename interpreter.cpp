@@ -368,39 +368,42 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
                     assert(false);
                 }
+                case object::ObjectType::String:
+                case object::ObjectType::Array:
+                case object::ObjectType::Object:
+                case object::ObjectType::Function:
+                case object::ObjectType::Undefined:
                 case object::ObjectType::Boolean: {
-                    auto left = static_cast<object::Boolean*>(left_result);
-
                     switch (e->op) {
                         case ast::Operator::EqualTo: {
-                            return object_manager.new_boolean(left->value == right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() == right_result->is_truthy());
                         }
                         case ast::Operator::EqualToStrict: {
-                            return object_manager.new_boolean(left->value == right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() == right_result->is_truthy());
                         }
                         case ast::Operator::And: {
-                            return object_manager.new_boolean(left->value && right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() && right_result->is_truthy());
                         }
                         case ast::Operator::Or: {
-                            return object_manager.new_boolean(left->value || right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() || right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualTo: {
-                            return object_manager.new_boolean(left->value != right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() != right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualToStrict: {
-                            return object_manager.new_boolean(left->value != right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() != right_result->is_truthy());
                         }
                         case ast::Operator::GreaterThan: {
-                            return object_manager.new_boolean(left->value > right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() > right_result->is_truthy());
                         }
                         case ast::Operator::GreaterThanOrEqualTo: {
-                            return object_manager.new_boolean(left->value >= right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() >= right_result->is_truthy());
                         }
                         case ast::Operator::LessThan: {
-                            return object_manager.new_boolean(left->value < right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() < right_result->is_truthy());
                         }
                         case ast::Operator::LessThanOrEqualTo: {
-                            return object_manager.new_boolean(left->value <= right_result->is_truthy());
+                            return object_manager.new_boolean(left_result->is_truthy() <= right_result->is_truthy());
                         }
                         case ast::Operator::Plus:
                         case ast::Operator::Minus:
@@ -419,9 +422,9 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                         }
                     }
                 }
-                default:
-                    assert(false);
             }
+
+            assert(false);
         }
         case ast::ExpressionType::Update: {
             auto e = expression->as_update();
