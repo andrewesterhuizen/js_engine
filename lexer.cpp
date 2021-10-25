@@ -2,92 +2,16 @@
 
 namespace lexer {
 
+#define CREATE_STRING_CASE(NAME) \
+    case TokenType::NAME: return #NAME;
+
+
 std::string token_type_to_string(TokenType type) {
     switch (type) {
-        case TokenType::Keyword:
-            return "Keyword";
-        case TokenType::Identifier:
-            return "Identifier";
-        case TokenType::String:
-            return "String";
-        case TokenType::Number:
-            return "Number";
-        case TokenType::Equals:
-            return "Equals";
-        case TokenType::EqualTo:
-            return "EqualTo";
-        case TokenType::EqualToStrict:
-            return "EqualToStrict";
-        case TokenType::NotEqualToStrict:
-            return "NotEqualToStrict";
-        case TokenType::And:
-            return "And";
-        case TokenType::Or:
-            return "Or";
-        case TokenType::LessThan:
-            return "LessThan";
-        case TokenType::LessThanOrEqualTo:
-            return "LessThanOrEqualTo";
-        case TokenType::GreaterThan:
-            return "GreaterThan";
-        case TokenType::GreaterThanOrEqualTo:
-            return "GreaterThanOrEqualTo";
-        case TokenType::NotEqualTo:
-            return "NotEqualTo";
-        case TokenType::Plus:
-            return "Plus";
-        case TokenType::Minus:
-            return "Minus";
-        case TokenType::Slash:
-            return "Slash";
-        case TokenType::Asterisk:
-            return "Asterisk";
-        case TokenType::Exponentiation:
-            return "Exponentiation";
-        case TokenType::Percent:
-            return "Percent";
-        case TokenType::Increment:
-            return "Increment";
-        case TokenType::AdditionAssignment:
-            return "AdditionAssignment";
-        case TokenType::SubtractionAssignment:
-            return "SubtractionAssignment";
-        case TokenType::MultiplicationAssignment:
-            return "MultiplicationAssignment";
-        case TokenType::DivisionAssignment:
-            return "DivisionAssignment";
-        case TokenType::Decrement:
-            return "Decrement";
-        case TokenType::Semicolon:
-            return "Semicolon";
-        case TokenType::Colon:
-            return "Colon";
-        case TokenType::Comma:
-            return "Comma";
-        case TokenType::LeftParen:
-            return "LeftParen";
-        case TokenType::RightParen:
-            return "RightParen";
-        case TokenType::LeftBrace:
-            return "LeftBrace";
-        case TokenType::RightBrace:
-            return "RightBrace";
-        case TokenType::LeftBracket:
-            return "LeftBracket";
-        case TokenType::RightBracket:
-            return "RightBracket";
-        case TokenType::Dot:
-            return "Dot";
-        case TokenType::QuestionMark:
-            return "QuestionMark";
-        case TokenType::EndOfFile:
-            return "EndOfFile";
-        case TokenType::NewLine:
-            return "NewLine";
+        TOKENS(CREATE_STRING_CASE)
+        default:
+            assert(false);
     }
-
-    std::cout << "missing string for TokenType\n";
-    assert(false);
 }
 
 nlohmann::json Token::to_json() {

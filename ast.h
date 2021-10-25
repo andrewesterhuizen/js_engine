@@ -9,30 +9,35 @@
 
 namespace ast {
 
+#define OPERATORS(MAP) \
+    MAP(Plus) \
+    MAP(Minus) \
+    MAP(Multiply) \
+    MAP(Divide) \
+    MAP(Modulo) \
+    MAP(Increment) \
+    MAP(Decrement) \
+    MAP(AdditionAssignment) \
+    MAP(SubtractionAssignment) \
+    MAP(MultiplicationAssignment) \
+    MAP(DivisionAssignment) \
+    MAP(Exponentiation) \
+    MAP(Equals) \
+    MAP(EqualTo) \
+    MAP(EqualToStrict) \
+    MAP(And) \
+    MAP(Or) \
+    MAP(NotEqualTo) \
+    MAP(NotEqualToStrict) \
+    MAP(GreaterThan) \
+    MAP(GreaterThanOrEqualTo) \
+    MAP(LessThan) \
+    MAP(LessThanOrEqualTo)
+
+#define CREATE_ENUM(NAME) NAME,
+
 enum class Operator {
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Modulo,
-    Increment,
-    Decrement,
-    AdditionAssignment,
-    SubtractionAssignment,
-    MultiplicationAssignment,
-    DivisionAssignment,
-    Exponentiation,
-    Equals,
-    EqualTo,
-    EqualToStrict,
-    And,
-    Or,
-    NotEqualTo,
-    NotEqualToStrict,
-    GreaterThan,
-    GreaterThanOrEqualTo,
-    LessThan,
-    LessThanOrEqualTo
+    OPERATORS(CREATE_ENUM)
 };
 
 Operator token_type_to_operator(lexer::TokenType token_type);
@@ -47,54 +52,48 @@ enum class VariableType {
 
 VariableType get_variable_type(std::string type);
 
+#define EXPRESSIONS(MAP) \
+    MAP(VariableDeclaration) \
+    MAP(Call) \
+    MAP(Member) \
+    MAP(Identifier) \
+    MAP(NumberLiteral) \
+    MAP(StringLiteral) \
+    MAP(BooleanLiteral) \
+    MAP(Binary) \
+    MAP(Assignment) \
+    MAP(Object) \
+    MAP(Array) \
+    MAP(Update) \
+    MAP(Ternary)
+
+#define STATEMENTS(MAP) \
+    MAP(Expression) \
+    MAP(Block) \
+    MAP(If) \
+    MAP(FunctionDeclaration) \
+    MAP(While) \
+    MAP(For) \
+    MAP(Return)
+
+
 enum class ExpressionType {
-    VariableDeclaration,
-    Call,
-    Member,
-    Identifier,
-    NumberLiteral,
-    StringLiteral,
-    BooleanLiteral,
-    Binary,
-    Assignment,
-    Object,
-    Array,
-    Update,
-    Ternary
+    EXPRESSIONS(CREATE_ENUM)
 };
 
 enum class StatementType {
-    Expression,
-    Block,
-    If,
-    FunctionDeclaration,
-    While,
-    For,
-    Return
+    STATEMENTS(CREATE_ENUM)
 };
 
-struct ExpressionStatement;
-struct BlockStatement;
-struct IfStatement;
-struct FunctionDeclarationStatement;
-struct WhileStatement;
-struct ForStatement;
-struct ReturnStatement;
+#undef CREATE_ENUM
 
-struct NumberLiteralExpression;
-struct StringLiteralExpression;
-struct BooleanLiteralExpression;
-struct ArrayExpression;
-struct ObjectExpression;
-struct IdentifierExpression;
-struct CallExpression;
-struct VariableDeclarationExpression;
-struct CallExpression;
-struct MemberExpression;
-struct BinaryExpression;
-struct AssignmentExpression;
-struct UpdateExpression;
-struct TernaryExpression;
+#define FORWARD_DECLARE_STATEMENT(NAME) struct NAME ## Statement;
+STATEMENTS(FORWARD_DECLARE_STATEMENT)
+#undef FORWARD_DECLARE_STATEMENT
+
+#define FORWARD_DECLARE_EXPRESSION(NAME) struct NAME ## Expression;
+EXPRESSIONS(FORWARD_DECLARE_EXPRESSION)
+#undef FORWARD_DECLARE_EXPRESSION
 
 struct Statement {
     Statement(StatementType type) : type(type) {}
@@ -204,7 +203,8 @@ struct CallExpression : public Expression {
 };
 
 struct VariableDeclarationExpression : public Expression {
-    VariableDeclarationExpression(std::vector<std::string> identifiers, std::shared_ptr<Expression> value, VariableType type)
+    VariableDeclarationExpression(std::vector<std::string> identifiers, std::shared_ptr<Expression> value,
+                                  VariableType type)
             : Expression(ExpressionType::VariableDeclaration), identifiers(identifiers), value(value), type(type) {}
     std::vector<std::string> identifiers;
     std::shared_ptr<Expression> value;

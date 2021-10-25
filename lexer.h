@@ -9,48 +9,55 @@
 
 namespace lexer {
 
+#define TOKENS(MAP) \
+    MAP(Keyword) \
+    MAP(Identifier) \
+    MAP(Number) \
+    MAP(String) \
+    MAP(Plus) \
+    MAP(Minus) \
+    MAP(Slash) \
+    MAP(Asterisk) \
+    MAP(Percent) \
+    MAP(Increment) \
+    MAP(Decrement) \
+    MAP(Exponentiation) \
+    MAP(AdditionAssignment) \
+    MAP(SubtractionAssignment) \
+    MAP(MultiplicationAssignment) \
+    MAP(DivisionAssignment) \
+    MAP(And) \
+    MAP(Or) \
+    MAP(EqualTo) \
+    MAP(EqualToStrict) \
+    MAP(NotEqualTo) \
+    MAP(NotEqualToStrict) \
+    MAP(LessThan) \
+    MAP(LessThanOrEqualTo) \
+    MAP(GreaterThan) \
+    MAP(GreaterThanOrEqualTo) \
+    MAP(Equals) \
+    MAP(Semicolon) \
+    MAP(Colon) \
+    MAP(Comma) \
+    MAP(LeftParen) \
+    MAP(RightParen) \
+    MAP(LeftBrace) \
+    MAP(RightBrace) \
+    MAP(LeftBracket) \
+    MAP(RightBracket) \
+    MAP(Dot) \
+    MAP(QuestionMark) \
+    MAP(NewLine) \
+    MAP(EndOfFile)
+
+#define CREATE_ENUM(NAME) NAME,
+
 enum class TokenType {
-    Keyword,
-    Identifier,
-    Number,
-    String,
-    Plus,
-    Minus,
-    Slash,
-    Asterisk,
-    Percent,
-    Increment,
-    Decrement,
-    Exponentiation,
-    AdditionAssignment,
-    SubtractionAssignment,
-    MultiplicationAssignment,
-    DivisionAssignment,
-    And,
-    Or,
-    EqualTo,
-    EqualToStrict,
-    NotEqualTo,
-    NotEqualToStrict,
-    LessThan,
-    LessThanOrEqualTo,
-    GreaterThan,
-    GreaterThanOrEqualTo,
-    Equals,
-    Semicolon,
-    Colon,
-    Comma,
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    LeftBracket,
-    RightBracket,
-    Dot,
-    QuestionMark,
-    NewLine,
-    EndOfFile
+    TOKENS(CREATE_ENUM)
 };
+
+#undef CREATE_ENUM
 
 std::string token_type_to_string(TokenType type);
 
