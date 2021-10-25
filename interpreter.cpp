@@ -113,7 +113,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                 return func->builtin_func(args);
             }
 
-            push_scope();
+            object_manager.push_scope();
 
             for (auto i = 0; i < func->parameters.size(); i++) {
                 auto has_arg = i < args.size();
@@ -123,7 +123,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
             auto return_value = execute(func->body);
 
-            pop_scope();
+            object_manager.pop_scope();
 
             return return_value;
         }
@@ -474,55 +474,25 @@ void Interpreter::run(ast::Program &program) {
 
 }
 
-Scope* Interpreter::current_scope() {
-    return &scopes[current_scope_index];
-}
-
-void Interpreter::push_scope() {
-    scopes.push_back(Scope{});
-    current_scope_index++;
-}
-
-void Interpreter::pop_scope() {
-    scopes.pop_back();
-    current_scope_index--;
-}
-
 object::Object* Interpreter::get_variable(std::string name) {
-    auto i = current_scope_index;
-
-    while (i >= 0) {
-        auto value = scopes[i].get_variable(name);
-        if (value != nullptr) {
-            return value;
-        }
-
-        i--;
+    auto v = object_manager.get_variable(name);
+    if (v == nullptr) {
+        throw_error("ReferenceError", name + " is not defined");
+        assert(false);
     }
 
-    throw_error("ReferenceError", name + " is not defined");
-    assert(false);
+    return v;
 }
 
 object::Object* Interpreter::declare_variable(std::string name, object::Object* value) {
-    return current_scope()->set_variable(name, value);
+    return object_manager.set_variable(name, value);
 }
 
 object::Object* Interpreter::set_variable(std::string name, object::Object* value) {
-    auto var = current_scope()->get_variable(name);
-
-    // undeclared so set in top level scope, closest thing we have to "global" right now
-    if (var == nullptr) {
-        return scopes[0].set_variable(name, value);
-    }
-
-    return current_scope()->set_variable(name, value);
+    return object_manager.set_variable(name, value);
 }
 
 Interpreter::Interpreter() {
-    // push top level scope
-    scopes.push_back(Scope{});
-
     auto console = object_manager.new_object();
     console->register_native_method("log", [&](std::vector<object::Object*> args) {
         std::string out;
@@ -536,7 +506,7 @@ Interpreter::Interpreter() {
         return object_manager.new_undefined();
     });
 
-    current_scope()->set_variable("console", console);
+    object_manager.current_scope()->set_variable("console", console);
 
     auto Math = object_manager.new_object();
     Math->register_native_method("abs", [&](std::vector<object::Object*> args) {
@@ -552,7 +522,7 @@ Interpreter::Interpreter() {
         return object_manager.new_number(std::sqrtf(arg->value));
     });
 
-    current_scope()->set_variable("Math", Math);
+    object_manager.current_scope()->set_variable("Math", Math);
 }
 
 }

@@ -1,21 +1,7 @@
-function squareRoot(number, tolerance) {
-  if (number < 0) {
-    return 0;
-  }
+var x = 0;
 
-  if (number === 0) {
-    return 0;
-  }
-
-  let root = 1;
-
-  const requiredDelta = 1 / (10 ** tolerance);
-
-  while (Math.abs(number - (root ** 2)) > requiredDelta) {
-    root -= ((root ** 2) - number) / (2 * root);
-  }
-
-  return Math.round(root * (10 ** tolerance)) / (10 ** tolerance);
+for(let i = 0; i < 1000000; i++) {
+    x++;
 }
 
-console.log(squareRoot(2, 4));
+console.log("done");

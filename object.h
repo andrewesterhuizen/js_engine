@@ -111,7 +111,7 @@ struct Array : public Object {
     Array() : Object(ObjectType::Array) {
         // TODO: not a good idea that these are getting created for every Array object
         register_native_method("push", [&](std::vector<object::Object*> args) {
-          return push(args);
+            return push(args);
         });
 
         register_native_method("pop", [&](std::vector<object::Object*> args) {
@@ -128,7 +128,7 @@ struct Array : public Object {
     }
 
     Object* pop() {
-        if(elements.size() == 0) {
+        if (elements.size() == 0) {
             return new Undefined();
         }
 
@@ -185,9 +185,44 @@ struct Array : public Object {
     }
 };
 
+struct Scope {
+    std::unordered_map<std::string, object::Object*> variables;
+
+    object::Object* get_variable(std::string name) {
+        if (auto entry = variables.find(name); entry != variables.end()) {
+            return entry->second;
+        }
+
+        return nullptr;
+    }
+
+    object::Object* set_variable(std::string name, object::Object* value) {
+        variables[name] = value;
+        return value;
+    }
+};
 
 class ObjectManager {
+    std::vector<Scope> scopes;
+    int current_scope_index = 0;
+
+    std::unordered_map<Object*, bool> objects;
+
+    const int gc_threshold = 25000;
+    int gc_amount = 0;
+    int objects_collected = 0;
+
+    void collect_garbage();
+
+    template<typename T, typename ... Args>
+    T* allocate(Args &&... args);
+
 public:
+    ObjectManager() {
+        // push top level scope
+        scopes.push_back(Scope{});
+    }
+
     Object* new_object();
     Function* new_function();
     Array* new_array();
@@ -196,6 +231,14 @@ public:
     Boolean* new_boolean(bool value);
     Undefined* new_undefined();
     bool is_undefined(Object* value);
+
+    void push_scope();
+    void pop_scope();
+    Scope* current_scope();
+    Scope* global_scope();
+    object::Object* get_variable(std::string name);
+    object::Object* set_variable(std::string name, object::Object* value);
+    object::Object* declare_variable(std::string name, object::Object* value);
 };
 
 }
