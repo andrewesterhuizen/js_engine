@@ -2,52 +2,7 @@
 
 namespace interpreter::object {
 
-bool ObjectManager::is_undefined(Object* value) {
-    return value->type() == ObjectType::Undefined;
-}
-
-Object* ObjectManager::new_object() {
-    return allocate<Object>(ObjectType::Object);
-}
-
-Function* ObjectManager::new_function() {
-    return allocate<Function>();
-}
-
-Array* ObjectManager::new_array() {
-    return allocate<Array>();
-}
-
-Number* ObjectManager::new_number(double value) {
-    return allocate<Number>(value);
-}
-
-String* ObjectManager::new_string(std::string value) {
-    return allocate<String>(value);
-}
-
-Boolean* ObjectManager::new_boolean(bool value) {
-    return allocate<Boolean>(value);
-}
-
-Undefined* ObjectManager::new_undefined() {
-    return allocate<Undefined>();
-}
-
-Number* Object::as_number() {
-    assert(type() == ObjectType::Number);
-    return static_cast<Number*>(this);
-}
-
-void Object::register_native_method(std::string name, std::function<Object*(std::vector<Object*>)> handler) {
-    // TODO: don't leak
-    auto func = new Function();
-    func->is_builtin = true;
-    func->builtin_func = handler;
-    properties[name] = func;
-}
-
-Scope* ObjectManager::current_scope() {
+ObjectManager::Scope* ObjectManager::current_scope() {
     return &scopes[current_scope_index];
 }
 
@@ -62,7 +17,7 @@ void ObjectManager::pop_scope() {
 }
 
 
-object::Object* ObjectManager::get_variable(std::string name) {
+object::Value* ObjectManager::get_variable(std::string name) {
     auto i = current_scope_index;
 
     while (i >= 0) {
@@ -77,11 +32,11 @@ object::Object* ObjectManager::get_variable(std::string name) {
     return nullptr;
 }
 
-object::Object* ObjectManager::declare_variable(std::string name, object::Object* value) {
+object::Value* ObjectManager::declare_variable(std::string name, object::Value* value) {
     return current_scope()->set_variable(name, value);
 }
 
-object::Object* ObjectManager::set_variable(std::string name, object::Object* value) {
+object::Value* ObjectManager::set_variable(std::string name, object::Value* value) {
     auto var = current_scope()->get_variable(name);
 
     // undeclared so set in top level scope, closest thing we have to "global" right now
@@ -98,17 +53,23 @@ void ObjectManager::collect_garbage() {
     for (auto i = 0; i <= current_scope_index; i++) {
         for (auto v: scopes[i].variables) {
             auto obj = v.second;
-            objects[obj] = true;
+            objects[obj].is_referenced = true;
             for (auto p: obj->properties) {
-                objects[p.second] = true;
+                objects[p.second].is_referenced = true;
             }
         }
     }
 
+
     // get list of unmarked objects
-    std::vector<Object*> to_remove;
+    std::vector<Value*> to_remove;
     for (auto o: objects) {
-        if (!o.second) {
+        auto obj = o.second;
+        if (is_value_still_in_scope(obj.value)) {
+            continue;
+        }
+
+        if (!obj.is_referenced) {
             to_remove.push_back(o.first);
         }
     }
@@ -120,20 +81,87 @@ void ObjectManager::collect_garbage() {
         objects_collected++;
     }
 
+    // reset objects
     for (auto &c: objects) {
-        c.second = false;
+        c.second.is_referenced = false;
     }
 }
 
 template<typename T, typename... Args>
 T* ObjectManager::allocate(Args &&... args) {
     if (objects.size() > gc_threshold) {
-        collect_garbage();
+        // TODO: fix garbage collection
+        // collect_garbage();
     }
 
     auto o = new T(std::forward<Args>(args)...);
-    objects[o] = false;
+    objects[o] = Cell{o, true};
+    current_scope()->values_in_scope.insert(o);
     return o;
+}
+
+void Value::register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler) {
+    auto func_value = object_manager.new_function();
+    auto func = func_value->function();
+    func->is_builtin = true;
+    func->builtin_func = handler;
+    properties[name] = func_value;
+}
+
+Value* Value::get_property(ObjectManager &object_manager, std::string name) {
+    if (type == Type::Array) {
+        // TODO: built in properties like this need to be generalised
+        if (name == "length") {
+            auto a = array();
+            return object_manager.new_number(a->elements.size());
+        }
+    }
+
+    if (auto entry = properties.find(name); entry != properties.end()) {
+        return entry->second;
+    }
+
+    if (!prototype.has_value()) {
+        return nullptr;
+    }
+
+    auto proto = object_manager.get_variable(prototype.value());
+    if (proto == nullptr) {
+        return nullptr;
+    }
+
+    return proto->get_property(object_manager, name);
+}
+
+Value* Value::get_property(ObjectManager &object_manager, int index) {
+    if (type == Type::Array) {
+        auto a = array();
+        return a->elements.at(index);
+    }
+
+    auto name = std::to_string(index);
+    return get_property(object_manager, name);
+}
+
+Value* Value::set_property(std::string name, Value* value) {
+    properties[name] = value;
+    return value;
+}
+
+Value* Value::set_property(int index, Value* value) {
+    if (type == Type::Array) {
+        auto a = array();
+
+        if (index > a->elements.size()) {
+            a->elements.resize(index + 1);
+        }
+
+        a->elements[index] = value;
+        return value;
+    }
+
+    auto name = std::to_string(index);
+    return set_property(name, value);
 }
 
 }

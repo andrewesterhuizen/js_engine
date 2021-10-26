@@ -4,7 +4,7 @@
 
 namespace interpreter {
 
-object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
+object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
     switch (statement->type) {
         case ast::StatementType::Expression: {
             auto s = statement->as_expression_statement();
@@ -20,7 +20,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
                 return execute(s->alternative);
             }
 
-            return object_manager.new_undefined();
+            return om.new_undefined();
         }
         case ast::StatementType::While: {
             auto s = statement->as_while();
@@ -29,7 +29,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
                 execute(s->body);
             }
 
-            return object_manager.new_undefined();
+            return om.new_undefined();
         }
         case ast::StatementType::For: {
             auto s = statement->as_for();
@@ -38,11 +38,11 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
                 execute(s->body);
             }
 
-            return object_manager.new_undefined();
+            return om.new_undefined();
         }
         case ast::StatementType::Block: {
             auto s = statement->as_block();
-            object::Object* final_value = nullptr;
+            object::Value* final_value = nullptr;
 
             for (auto s: s->body) {
                 final_value = execute(s);
@@ -52,7 +52,7 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
             }
 
             if (final_value == nullptr) {
-                return object_manager.new_undefined();
+                return om.new_undefined();
             }
 
             return final_value;
@@ -60,17 +60,18 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
         case ast::StatementType::FunctionDeclaration: {
             auto s = statement->as_function_declaration();
 
-            auto func = object_manager.new_function();
+            auto func_value = om.new_function();
+            auto func = func_value->function();
             func->is_builtin = false;
             func->parameters = s->parameters;
             func->body = s->body;
 
-            return declare_variable(s->identifier, func);
+            return declare_variable(s->identifier, func_value);
         }
         case ast::StatementType::Return: {
             auto s = statement->as_return();
             if (s->argument == nullptr) {
-                return object_manager.new_undefined();
+                return om.new_undefined();
             }
 
             return execute(s->argument);
@@ -81,51 +82,44 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Statement> statement) 
     assert(false);
 }
 
-object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
+object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
     switch (expression->type) {
         case ast::ExpressionType::Call: {
             auto e = expression->as_call();
 
             auto func_obj = execute(e->callee);
-            if (func_obj->type() == object::ObjectType::Undefined) {
-                assert(e->callee->type == ast::ExpressionType::Member);
-                auto callee = e->callee->as_member();
-                assert(callee->object->type == ast::ExpressionType::Identifier);
-                assert(callee->property->type == ast::ExpressionType::Identifier);
-                assert(callee->is_computed == false);
+            if (func_obj->type == object::Value::Type::Undefined) {
+                if (e->callee->type == ast::ExpressionType::Identifier) {
+                    auto callee = e->callee->as_identifier();
+                    throw_error("TypeError", callee->name + " is not a function");
+                } else if (e->callee->type == ast::ExpressionType::Member) {
+                    auto callee = e->callee->as_member();
+                    assert(callee->object->type == ast::ExpressionType::Identifier);
+                    assert(callee->property->type == ast::ExpressionType::Identifier);
+                    assert(callee->is_computed == false);
 
-                auto object_id = callee->object->as_identifier()->name;
-                auto property_id = callee->property->as_identifier()->name;
-                throw_error("TypeError", object_id + "." + property_id + " is not a function");
+                    auto object_id = callee->object->as_identifier()->name;
+                    auto property_id = callee->property->as_identifier()->name;
+                    throw_error("TypeError", object_id + "." + property_id + " is not a function");
+                }
+
                 assert(false);
             }
 
-            assert(func_obj->type() == object::ObjectType::Function);
-            auto func = static_cast<object::Function*>(func_obj);
-
-            std::vector<object::Object*> args;
+            std::vector<object::Value*> args;
 
             for (auto arg: e->arguments) {
                 args.push_back(execute(arg));
             }
 
-            if (func->is_builtin) {
-                return func->builtin_func(args);
+            assert(e->callee->type == ast::ExpressionType::Member);
+            if (e->callee->type == ast::ExpressionType::Member) {
+                auto object = e->callee->as_member()->object->as_identifier();
+                auto object_value = get_variable(object->name);
+                return call_function(object_value, func_obj, args);
             }
 
-            object_manager.push_scope();
-
-            for (auto i = 0; i < func->parameters.size(); i++) {
-                auto has_arg = i < args.size();
-                auto value = has_arg ? args[i] : object_manager.new_undefined();
-                set_variable(func->parameters[i], value);
-            }
-
-            auto return_value = execute(func->body);
-
-            object_manager.pop_scope();
-
-            return return_value;
+            return call_function(nullptr, func_obj, args);
         }
         case ast::ExpressionType::Member: {
             auto e = expression->as_member();
@@ -134,40 +128,38 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto obj = get_variable(left->name);
 
             if (e->is_computed) {
-                object::Object* property;
+                object::Value* property;
                 auto right = execute(e->property);
 
-                if (right->type() == object::ObjectType::Number) {
-                    auto index = static_cast<object::Number*>(right);
-                    property = obj->get_property(index->value);
+                if (right->type == object::Value::Type::Number) {
+                    property = obj->get_property(om, right->number());
                 } else {
-                    assert(right->type() == object::ObjectType::String);
-                    auto name = static_cast<object::String*>(right);
-                    property = obj->get_property(name->value);
+                    assert(right->type == object::Value::Type::String);
+                    property = obj->get_property(om, right->string());
                 }
 
                 if (property != nullptr) {
                     return property;
                 }
 
-                return object_manager.new_undefined();
+                return om.new_undefined();
             } else {
                 auto right = e->property->as_identifier();
 
-                auto property = obj->get_property(right->name);
+                auto property = obj->get_property(om, right->name);
 
                 if (property != nullptr) {
                     return property;
                 }
 
-                return object_manager.new_undefined();
+                return om.new_undefined();
             }
 
             assert(false);
         }
         case ast::ExpressionType::VariableDeclaration: {
             auto e = expression->as_variable_declaration();
-            object::Object* value = e->value != nullptr ? execute(e->value) : object_manager.new_undefined();
+            object::Value* value = e->value != nullptr ? execute(e->value) : om.new_undefined();
             for (auto id: e->identifiers) {
                 declare_variable(id, value);
             }
@@ -186,23 +178,23 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     return set_variable(left->name, right);
                 }
 
-                auto left_number = get_variable(left->name)->as_number();
-                auto right_number = right->as_number();
+                auto left_number = get_variable(left->name)->number();
+                auto right_number = right->number();
 
-                auto result = object_manager.new_number(0);
+                auto result = om.new_number(0);
 
                 switch (e->op) {
                     case ast::Operator::AdditionAssignment:
-                        result->value = left_number->value + right_number->value;
+                        result->value = left_number + right_number;
                         break;
                     case ast::Operator::SubtractionAssignment:
-                        result->value = left_number->value - right_number->value;
+                        result->value = left_number - right_number;
                         break;
                     case ast::Operator::MultiplicationAssignment:
-                        result->value = left_number->value * right_number->value;
+                        result->value = left_number * right_number;
                         break;
                     case ast::Operator::DivisionAssignment:
-                        result->value = left_number->value / right_number->value;
+                        result->value = left_number / right_number;
                         break;
                     default:
                         assert(false);
@@ -222,15 +214,13 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
                     auto object = get_variable(object_name->name);
 
                     auto property = execute(left->property);
-                    if (property->type() == object::ObjectType::Number) {
-                        auto index = static_cast<object::Number*>(property);
-                        object->set_property(index->value, right);
+                    if (property->type == object::Value::Type::Number) {
+                        object->set_property(property->number(), right);
                         return property;
                     }
 
-                    if (property->type() == object::ObjectType::String) {
-                        auto name = static_cast<object::String*>(property);
-                        object->set_property(name->value, right);
+                    if (property->type == object::Value::Type::String) {
+                        object->set_property(property->string(), right);
                         return property;
                     }
 
@@ -253,17 +243,17 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             return get_variable(expression->as_identifier()->name);
         }
         case ast::ExpressionType::NumberLiteral: {
-            return object_manager.new_number(expression->as_number_literal()->value);
+            return om.new_number(expression->as_number_literal()->value);
         }
         case ast::ExpressionType::StringLiteral: {
-            return object_manager.new_string(expression->as_string_literal()->value);
+            return om.new_string(expression->as_string_literal()->value);
         }
         case ast::ExpressionType::BooleanLiteral: {
-            return object_manager.new_boolean(expression->as_boolean_literal()->value);
+            return om.new_boolean(expression->as_boolean_literal()->value);
         }
         case ast::ExpressionType::Object: {
             auto e = expression->as_object();
-            auto object = object_manager.new_object();
+            auto object = om.new_object();
 
             for (auto p: e->properties) {
                 object->properties[p.first] = execute(p.second);
@@ -273,13 +263,25 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
         case ast::ExpressionType::Array: {
             auto e = expression->as_array();
-            auto array = object_manager.new_array();
+            auto array_value = om.new_array();
+            auto array = array_value->array();
 
             for (auto e: e->elements) {
                 array->elements.push_back(execute(e));
             }
 
-            return array;
+            return array_value;
+        }
+        case ast::ExpressionType::Function: {
+            auto e = expression->as_function();
+
+            auto func_value = om.new_function();
+            auto func = func_value->function();
+            func->is_builtin = false;
+            func->parameters = e->parameters;
+            func->body = e->body;
+
+            return func_value;
         }
         case ast::ExpressionType::Binary: {
             auto e = expression->as_binary();
@@ -287,73 +289,70 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
             auto right_result = execute(e->right);
             auto left_result = execute(e->left);
 
-            switch (left_result->type()) {
-                case object::ObjectType::Number: {
-                    auto left = static_cast<object::Number*>(left_result);
-                    auto right = static_cast<object::Number*>(right_result);
-
+            switch (left_result->type) {
+                case object::Value::Type::Number: {
                     switch (e->op) {
                         case ast::Operator::Plus: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(left->value + right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(left_result->number() + right_result->number());
                         }
                         case ast::Operator::Minus: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(left->value - right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(left_result->number() - right_result->number());
                         }
                         case ast::Operator::Multiply: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(left->value * right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(left_result->number() * right_result->number());
                         }
                         case ast::Operator::Divide: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(left->value / right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(left_result->number() / right_result->number());
                         }
                         case ast::Operator::Modulo: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(std::fmod(left->value, right->value));
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(std::fmod(left_result->number(), right_result->number()));
                         }
                         case ast::Operator::Exponentiation: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_number(std::powf(left->value, right->value));
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_number(std::powf(left_result->number(), right_result->number()));
                         }
                         case ast::Operator::EqualTo: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value == right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() == right_result->number());
                         }
                         case ast::Operator::EqualToStrict: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value == right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() == right_result->number());
                         }
                         case ast::Operator::And: {
-                            return object_manager.new_boolean(left->is_truthy() && right->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() && right_result->is_truthy());
                         }
                         case ast::Operator::Or: {
-                            return object_manager.new_boolean(left->is_truthy() || right->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() || right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualTo: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value != right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() != right_result->number());
                         }
                         case ast::Operator::NotEqualToStrict: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value != right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() != right_result->number());
                         }
                         case ast::Operator::GreaterThan: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value > right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() > right_result->number());
                         }
                         case ast::Operator::GreaterThanOrEqualTo: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value >= right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() >= right_result->number());
                         }
                         case ast::Operator::LessThan: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value < right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() < right_result->number());
                         }
                         case ast::Operator::LessThanOrEqualTo: {
-                            assert(right_result->type() == object::ObjectType::Number);
-                            return object_manager.new_boolean(left->value <= right->value);
+                            assert(right_result->type == object::Value::Type::Number);
+                            return om.new_boolean(left_result->number() <= right_result->number());
                         }
                         case ast::Operator::Equals:
                         case ast::Operator::AdditionAssignment:
@@ -368,42 +367,42 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
                     assert(false);
                 }
-                case object::ObjectType::String:
-                case object::ObjectType::Array:
-                case object::ObjectType::Object:
-                case object::ObjectType::Function:
-                case object::ObjectType::Undefined:
-                case object::ObjectType::Boolean: {
+                case object::Value::Type::String:
+                case object::Value::Type::Object:
+                case object::Value::Type::Array:
+                case object::Value::Type::Function:
+                case object::Value::Type::Undefined:
+                case object::Value::Type::Boolean: {
                     switch (e->op) {
                         case ast::Operator::EqualTo: {
-                            return object_manager.new_boolean(left_result->is_truthy() == right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() == right_result->is_truthy());
                         }
                         case ast::Operator::EqualToStrict: {
-                            return object_manager.new_boolean(left_result->is_truthy() == right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() == right_result->is_truthy());
                         }
                         case ast::Operator::And: {
-                            return object_manager.new_boolean(left_result->is_truthy() && right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() && right_result->is_truthy());
                         }
                         case ast::Operator::Or: {
-                            return object_manager.new_boolean(left_result->is_truthy() || right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() || right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualTo: {
-                            return object_manager.new_boolean(left_result->is_truthy() != right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() != right_result->is_truthy());
                         }
                         case ast::Operator::NotEqualToStrict: {
-                            return object_manager.new_boolean(left_result->is_truthy() != right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() != right_result->is_truthy());
                         }
                         case ast::Operator::GreaterThan: {
-                            return object_manager.new_boolean(left_result->is_truthy() > right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() > right_result->is_truthy());
                         }
                         case ast::Operator::GreaterThanOrEqualTo: {
-                            return object_manager.new_boolean(left_result->is_truthy() >= right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() >= right_result->is_truthy());
                         }
                         case ast::Operator::LessThan: {
-                            return object_manager.new_boolean(left_result->is_truthy() < right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() < right_result->is_truthy());
                         }
                         case ast::Operator::LessThanOrEqualTo: {
-                            return object_manager.new_boolean(left_result->is_truthy() <= right_result->is_truthy());
+                            return om.new_boolean(left_result->is_truthy() <= right_result->is_truthy());
                         }
                         case ast::Operator::Plus:
                         case ast::Operator::Minus:
@@ -433,13 +432,13 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
 
             auto identifier = e->argument->as_identifier();
             auto value_object = get_variable(identifier->name);
-            assert(value_object->type() == object::ObjectType::Number);
-            auto value_number = static_cast<object::Number*>(value_object);
-            auto new_value = e->op == ast::Operator::Increment ? value_number->value + 1 : value_number->value - 1;
+            assert(value_object->type == object::Value::Type::Number);
+            auto new_value =
+                    e->op == ast::Operator::Increment ? value_object->number() + 1 : value_object->number() - 1;
 
-            set_variable(identifier->name, object_manager.new_number(new_value));
+            set_variable(identifier->name, om.new_number(new_value));
 
-            return object_manager.new_number(e->is_prefix ? new_value : value_number->value);
+            return om.new_number(e->is_prefix ? new_value : value_object->number());
         }
         case ast::ExpressionType::Ternary: {
             auto e = expression->as_ternary();
@@ -452,10 +451,34 @@ object::Object* Interpreter::execute(std::shared_ptr<ast::Expression> expression
         }
     }
 
-    std::cerr << "unable to execute expression type: " << expression->
-            to_json()["type"]
+    std::cerr << "unable to execute expression type: " << expression->to_json()["type"]
               << "\n";
     assert(false);
+}
+
+object::Value*
+Interpreter::call_function(object::Value* caller, object::Value* func_value, std::vector<object::Value*> args) {
+    assert(func_value->type == object::Value::Type::Function);
+
+    auto func = func_value->function();
+
+    if (func->is_builtin) {
+        return func->builtin_func(caller, args);
+    }
+
+    om.push_scope();
+
+    for (auto i = 0; i < func->parameters.size(); i++) {
+        auto has_arg = i < args.size();
+        auto value = has_arg ? args[i] : om.new_undefined();
+        set_variable(func->parameters[i], value);
+    }
+
+    auto return_value = execute(func->body);
+
+    om.pop_scope();
+
+    return return_value;
 }
 
 void Interpreter::throw_error(std::string type, std::string message) {
@@ -463,22 +486,22 @@ void Interpreter::throw_error(std::string type, std::string message) {
 }
 
 void Interpreter::run(ast::Program &program) {
-    object::Object* final_value;
+    object::Value* final_value;
 
     // TODO: there is probably a way to do this without exceptions but this is quick and easy
     try {
         for (auto s: program.body) {
             final_value = execute(s);
         }
-    } catch (Error error) {
+    }
+    catch (Error error) {
         std::cerr << error.type << ": " << error.message;
         return;
     }
-
 }
 
-object::Object* Interpreter::get_variable(std::string name) {
-    auto v = object_manager.get_variable(name);
+object::Value* Interpreter::get_variable(std::string name) {
+    auto v = om.get_variable(name);
     if (v == nullptr) {
         throw_error("ReferenceError", name + " is not defined");
         assert(false);
@@ -487,17 +510,20 @@ object::Object* Interpreter::get_variable(std::string name) {
     return v;
 }
 
-object::Object* Interpreter::declare_variable(std::string name, object::Object* value) {
-    return object_manager.set_variable(name, value);
+object::Value* Interpreter::declare_variable(std::string name, object::Value* value) {
+    return om.set_variable(name, value);
 }
 
-object::Object* Interpreter::set_variable(std::string name, object::Object* value) {
-    return object_manager.set_variable(name, value);
+object::Value* Interpreter::set_variable(std::string name, object::Value* value) {
+    return om.set_variable(name, value);
 }
 
-Interpreter::Interpreter() {
-    auto console = object_manager.new_object();
-    console->register_native_method("log", [&](std::vector<object::Object*> args) {
+void Interpreter::create_builtin_objects() {
+    // console
+    auto console = om.new_object();
+    om.current_scope()->set_variable("console", console);
+
+    console->register_native_method(om, "log", [&](object::Value*, std::vector<object::Value*> args) {
         std::string out;
 
         for (auto arg: args) {
@@ -506,26 +532,112 @@ Interpreter::Interpreter() {
 
         std::cout << out << "\n";
 
-        return object_manager.new_undefined();
+        return om.new_undefined();
     });
 
-    object_manager.current_scope()->set_variable("console", console);
-
-    auto Math = object_manager.new_object();
-    Math->register_native_method("abs", [&](std::vector<object::Object*> args) {
-        auto arg = args[0]->as_number();
-        return object_manager.new_number(std::fabs(arg->value));
+    // Math
+    auto Math = om.new_object();
+    om.current_scope()->set_variable("Math", Math);
+    Math->register_native_method(om, "abs", [&](object::Value*, std::vector<object::Value*> args) {
+        return om.new_number(std::fabs(args[0]->number()));
     });
-    Math->register_native_method("round", [&](std::vector<object::Object*> args) {
-        auto arg = args[0]->as_number();
-        return object_manager.new_number(std::roundf(arg->value));
+    Math->register_native_method(om, "round", [&](object::Value*, std::vector<object::Value*> args) {
+        return om.new_number(std::roundf(args[0]->number()));
     });
-    Math->register_native_method("sqrt", [&](std::vector<object::Object*> args) {
-        auto arg = args[0]->as_number();
-        return object_manager.new_number(std::sqrtf(arg->value));
+    Math->register_native_method(om, "sqrt", [&](object::Value*, std::vector<object::Value*> args) {
+        return om.new_number(std::sqrtf(args[0]->number()));
     });
 
-    object_manager.current_scope()->set_variable("Math", Math);
+    // Array
+    auto Array = om.new_object();
+    om.current_scope()->set_variable("Array", Array);
+
+    Array->register_native_method(om, "push", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto array = caller->array();
+
+        for (auto arg: args) {
+            array->elements.push_back(arg);
+        }
+
+        return caller->get_property(om, "length");
+    });
+
+    Array->register_native_method(om, "pop", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto array = caller->array();
+
+        if (array->elements.size() == 0) {
+            return om.new_undefined();
+        }
+
+        auto value = array->elements[array->elements.size() - 1];
+        array->elements.pop_back();
+        return value;
+    });
+
+    Array->register_native_method(om, "forEach", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto caller_obj = caller->array();
+        auto callback = args[0];
+
+        for (auto i = 0; i < caller_obj->elements.size(); i++) {
+            auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
+            call_function(caller, callback, args);
+        }
+
+        return om.new_undefined();
+    });
+
+    Array->register_native_method(om, "map", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto caller_obj = caller->array();
+        auto callback = args[0];
+
+        auto result_value = om.new_array();
+        auto result = result_value->array();
+
+        for (auto i = 0; i < caller_obj->elements.size(); i++) {
+            auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
+            auto v = call_function(caller, callback, args);
+            result->elements.push_back(v);
+        }
+
+        return result_value;
+    });
+
+    Array->register_native_method(om, "filter", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto caller_obj = caller->array();
+        auto callback = args[0];
+
+        auto result_value = om.new_array();
+        auto result = result_value->array();
+
+        for (auto i = 0; i < caller_obj->elements.size(); i++) {
+            auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
+            auto v = call_function(caller, callback, args);
+            if (v->is_truthy()) {
+                result->elements.push_back(v);
+            }
+        }
+
+        return result_value;
+    });
+
+    Array->register_native_method(om, "reduce", [&](object::Value* caller, std::vector<object::Value*> args) {
+        auto caller_obj = caller->array();
+        auto callback = args[0];
+        auto initial_value = args[1];
+
+        auto prev = initial_value;
+
+        for (auto i = 0; i < caller_obj->elements.size(); i++) {
+            auto args = std::vector<object::Value*>{prev, caller_obj->elements[i], om.new_number(i)};
+            prev = call_function(caller, callback, args);
+        }
+
+        return prev;
+    });
+}
+
+Interpreter::Interpreter() {
+    create_builtin_objects();
 }
 
 }

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <variant>
 
 #include "ast.h"
 
@@ -17,196 +19,223 @@ enum class ObjectType {
     Array
 };
 
-struct Number;
-struct Function;
+struct ObjectManager;
 
-struct Object {
-    Object(ObjectType object_type) : object_type(object_type) {}
-    ObjectType object_type = ObjectType::Object;
-    std::unordered_map<std::string, Object*> properties;
+struct Value {
+    using native_function_handler = std::function<Value*(Value*, std::vector<Value*>)>;
 
-    ObjectType type() { return object_type; }
-    virtual bool is_truthy() { return true; }
+    struct Function {
+        std::vector<std::string> parameters;
+        std::shared_ptr<ast::Statement> body;
+        bool is_builtin;
+        std::function<Value*(Value*, std::vector<Value*>)> builtin_func;
+    };
+    struct Array {
+        std::vector<Value*> elements;
+    };
 
-    Number* as_number();
+    enum class Type {
+        Object,
+        Array,
+        Function,
+        Number,
+        String,
+        Boolean,
+        Undefined
+    };
 
-    void register_native_method(std::string name, std::function<Object*(std::vector<Object*>)> handler);
+    std::unordered_map<std::string, Value*> properties;
+    std::optional<std::string> prototype;
+    Type type;
+    std::variant<double, std::string, bool, std::vector<Value*>, std::unordered_map<std::string, Value*>, Function, Array> value;
 
-    virtual std::string to_string() {
-        nlohmann::json j;
-
-        for (auto p: properties) {
-            j[p.first] = p.second->to_string();
-        }
-
-        if (j.empty()) {
-            return "{}";
-        }
-
-        return j.dump(4);
+    Function* function() {
+        assert(type == Type::Function);
+        return &std::get<Function>(value);
     }
 
-    virtual Object* get_property(std::string name) {
-        if (auto entry = properties.find(name); entry != properties.end()) {
-            return entry->second;
+    Array* array() {
+        assert(type == Type::Array);
+        return &std::get<Array>(value);
+    }
+
+    double number() {
+        assert(type == Type::Number);
+        return std::get<double>(value);
+    }
+
+    std::string string() {
+        assert(type == Type::String);
+        return std::get<std::string>(value);
+    }
+
+    std::string to_string() {
+        switch (type) {
+            case Type::Object: {
+                nlohmann::json j;
+
+                for (auto p: properties) {
+                    j[p.first] = p.second->to_string();
+                }
+
+                if (j.empty()) {
+                    return "{}";
+                }
+
+                return j.dump(4);
+            }
+            case Type::Function:
+                return "Function";
+            case Type::Array: {
+                nlohmann::json j;
+
+                std::vector<std::string> element_strings;
+
+                auto array = std::get<Array>(value);
+                for (auto e: array.elements) {
+                    element_strings.push_back(e->to_string());
+                }
+
+                j = element_strings;
+
+                if (j.empty()) {
+                    return "[]";
+                }
+
+                return j.dump(4);
+            }
+            case Type::Number:
+                return std::to_string(std::get<double>(value));
+            case Type::String:
+                return "\"" + std::get<std::string>(value) + "\"";
+            case Type::Boolean:
+                return std::get<bool>(value) ? "true" : "False";
+            case Type::Undefined:
+                return "undefined";
         }
-
-        return nullptr;
     }
 
-    virtual Object* get_property(int index) {
-        auto name = std::to_string(index);
-        return get_property(name);
+    bool is_truthy() {
+        switch (type) {
+            case Type::Object:
+            case Type::Function:
+            case Type::Array:
+                return true;
+            case Type::Number:
+                return std::get<double>(value) != 0;
+            case Type::String:
+                return std::get<std::string>(value) != "";
+            case Type::Boolean:
+                return std::get<bool>(value);
+            case Type::Undefined:
+                return false;
+        }
     }
 
-    virtual Object* set_property(std::string name, Object* value) {
-        properties[name] = value;
+    bool is_undefined() {
+        return type == Type::Undefined;
+    }
+
+    Value* get_property(ObjectManager &object_manager, std::string name);
+    Value* get_property(ObjectManager &object_manager, int index);
+    Value* set_property(std::string name, Value* value);
+    Value* set_property(int index, Value* value);
+
+    void register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler);
+};
+
+
+class ValueFactory {
+    ValueFactory();
+public:
+    static Value* number(Value* value, double v) {
+        value->type = Value::Type::Number;
+        value->value = v;
+        value->prototype = "Number";
         return value;
     }
 
-    virtual Object* set_property(int index, Object* value) {
-        auto name = std::to_string(index);
-        return set_property(name, value);
-    }
-};
-
-struct Function : public Object {
-    Function() : Object(ObjectType::Function) {}
-    bool is_builtin;
-    std::function<Object*(std::vector<Object*>)> builtin_func;
-    std::vector<std::string> parameters;
-    std::shared_ptr<ast::Statement> body;
-    bool is_truthy() override { return true; }
-    std::string to_string() override { return "Function"; }
-};
-
-struct Undefined : public Object {
-    Undefined() : Object(ObjectType::Undefined) {}
-    bool is_truthy() override { return false; }
-    std::string to_string() override { return "undefined"; }
-};
-
-struct Number : public Object {
-    Number(double value) : Object(ObjectType::Number), value(value) {};
-    double value;
-    bool is_truthy() override { return value != 0; }
-    std::string to_string() override { return std::to_string(value); }
-};
-
-struct String : public Object {
-    String(std::string value) : Object(ObjectType::String), value(value) {};
-    std::string value;
-    bool is_truthy() override { return value != ""; }
-    std::string to_string() override { return "\"" + value + "\""; }
-};
-
-struct Boolean : public Object {
-    Boolean(bool value) : Object(ObjectType::Boolean), value(value) {};
-    bool value;
-    bool is_truthy() override { return value; }
-    std::string to_string() override { return value ? "true" : "false"; }
-};
-
-struct Array : public Object {
-    Array() : Object(ObjectType::Array) {
-        // TODO: not a good idea that these are getting created for every Array object
-        register_native_method("push", [&](std::vector<object::Object*> args) {
-            return push(args);
-        });
-
-        register_native_method("pop", [&](std::vector<object::Object*> args) {
-            return pop();
-        });
-    }
-
-    Object* push(std::vector<object::Object*> args) {
-        for (auto arg: args) {
-            elements.push_back(arg);
-        }
-
-        return get_property("length");
-    }
-
-    Object* pop() {
-        if (elements.size() == 0) {
-            return new Undefined();
-        }
-
-        auto value = elements[elements.size() - 1];
-        elements.pop_back();
+    static Value* string(Value* value, std::string v) {
+        value->type = Value::Type::String;
+        value->value = v;
+        value->prototype = "String";
         return value;
     }
 
-    std::vector<Object*> elements;
-    bool is_truthy() override { return true; }
-    std::string to_string() override {
-        nlohmann::json j;
-
-        std::vector<std::string> element_strings;
-
-        for (auto e: elements) {
-            element_strings.push_back(e->to_string());
-        }
-
-        j = element_strings;
-
-        if (j.empty()) {
-            return "[]";
-        }
-
-        return j.dump(4);
+    static Value* boolean(Value* value, bool v) {
+        value->type = Value::Type::Boolean;
+        value->value = v;
+        value->prototype = "Boolean";
+        return value;
     }
 
-    Object* get_property(std::string name) override {
-        // TODO: this number won't always be accurate
-        if (name == "length") {
-            // TODO: this needs to go through object_manager for when we implement garbage collection
-            return new Number(elements.size());
-        }
-
-        return Object::get_property(name);
+    static Value* array(Value* value) {
+        std::vector<Value*> v;
+        return array(value, v);
     }
 
-    Object* get_property(int index) override {
-        if ((index + 1) > elements.size()) {
+    static Value* array(Value* value, std::vector<Value*> v) {
+        value->type = Value::Type::Array;
+        value->value = Value::Array{v};
+        value->prototype = "Array";
+        return value;
+    }
+
+    static Value* object(Value* value) {
+        std::unordered_map<std::string, Value*> v;
+        return object(value, v);
+    }
+
+    static Value* object(Value* value, std::unordered_map<std::string, Value*> v) {
+        value->type = Value::Type::Object;
+        value->value = v;
+        value->prototype = "Object";
+        return value;
+    }
+
+    static Value* function(Value* value) {
+        value->type = Value::Type::Function;
+        value->value = Value::Function{};
+        value->prototype = "Object";
+        return value;
+    }
+
+    static Value* undefined(Value* value) {
+        value->type = Value::Type::Undefined;
+        value->prototype = "Object";
+        return value;
+    }
+};
+
+
+class ObjectManager {
+    struct Scope {
+        std::unordered_set<Value*> values_in_scope;
+        std::unordered_map<std::string, Value*> variables;
+
+        Value* get_variable(std::string name) {
+            if (auto entry = variables.find(name); entry != variables.end()) {
+                return entry->second;
+            }
+
             return nullptr;
         }
 
-        return elements.at(index);
-    }
-
-    Object* set_property(int index, Object* value) override {
-        if (index > elements.size()) {
-            elements.resize(index + 1);
+        Value* set_variable(std::string name, Value* value) {
+            variables[name] = value;
+            return value;
         }
+    };
 
-        elements[index] = value;
-        return value;
-    }
-};
+    struct Cell {
+        Value* value;
+        bool is_referenced;
+    };
 
-struct Scope {
-    std::unordered_map<std::string, object::Object*> variables;
-
-    object::Object* get_variable(std::string name) {
-        if (auto entry = variables.find(name); entry != variables.end()) {
-            return entry->second;
-        }
-
-        return nullptr;
-    }
-
-    object::Object* set_variable(std::string name, object::Object* value) {
-        variables[name] = value;
-        return value;
-    }
-};
-
-class ObjectManager {
     std::vector<Scope> scopes;
     int current_scope_index = 0;
 
-    std::unordered_map<Object*, bool> objects;
+    std::unordered_map<Value*, Cell> objects;
 
     const int gc_threshold = 25000;
     int gc_amount = 0;
@@ -217,28 +246,57 @@ class ObjectManager {
     template<typename T, typename ... Args>
     T* allocate(Args &&... args);
 
+    bool is_value_still_in_scope(Value* v) {
+        auto i = current_scope_index;
+
+        while (i >= 0) {
+            auto scope = scopes[i];
+            auto value = scope.values_in_scope.find(v);
+            if (value != scope.values_in_scope.end()) {
+                return true;
+            }
+
+            i--;
+        }
+
+        return false;
+    }
+
 public:
     ObjectManager() {
         // push top level scope
         scopes.push_back(Scope{});
     }
 
-    Object* new_object();
-    Function* new_function();
-    Array* new_array();
-    Number* new_number(double value);
-    String* new_string(std::string value);
-    Boolean* new_boolean(bool value);
-    Undefined* new_undefined();
-    bool is_undefined(Object* value);
+    Value* new_object() {
+        return ValueFactory::object(allocate<Value>());
+    }
+    Value* new_function() {
+        return ValueFactory::function(allocate<Value>());
+    }
+    Value* new_array() {
+        return ValueFactory::array(allocate<Value>());
+    }
+    Value* new_number(double value) {
+        return ValueFactory::number(allocate<Value>(), value);
+    }
+    Value* new_string(std::string value) {
+        return ValueFactory::string(allocate<Value>(), value);
+    }
+    Value* new_boolean(bool value) {
+        return ValueFactory::boolean(allocate<Value>(), value);
+    }
+    Value* new_undefined() {
+        return ValueFactory::undefined(allocate<Value>());
+    }
 
     void push_scope();
     void pop_scope();
     Scope* current_scope();
     Scope* global_scope();
-    object::Object* get_variable(std::string name);
-    object::Object* set_variable(std::string name, object::Object* value);
-    object::Object* declare_variable(std::string name, object::Object* value);
+    Value* get_variable(std::string name);
+    Value* set_variable(std::string name, Value* value);
+    Value* declare_variable(std::string name, Value* value);
 };
 
 }

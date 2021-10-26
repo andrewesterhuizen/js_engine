@@ -14,15 +14,18 @@ struct Error {
 };
 
 class Interpreter {
-    object::ObjectManager object_manager;
+    object::ObjectManager om;
 
-    object::Object* get_variable(std::string name);
-    object::Object* set_variable(std::string name, object::Object* value);
-    object::Object* declare_variable(std::string name, object::Object* value);
+    object::Value* get_variable(std::string name);
+    object::Value* set_variable(std::string name, object::Value* value);
+    object::Value* declare_variable(std::string name, object::Value* value);
 
-    object::Object* execute(std::shared_ptr<ast::Statement> statement);
-    object::Object* execute(std::shared_ptr<ast::Expression> expression);
+    object::Value* call_function(object::Value* caller, object::Value* func_value, std::vector<object::Value*> args);
+    object::Value* execute(std::shared_ptr<ast::Statement> statement);
+    object::Value* execute(std::shared_ptr<ast::Expression> expression);
     void throw_error(std::string type, std::string message);
+
+    void create_builtin_objects();
 public:
     Interpreter();
     void run(ast::Program &program);
