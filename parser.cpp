@@ -186,6 +186,38 @@ std::shared_ptr<ast::Expression> Parser::parse_object_expression() {
     return expression;
 }
 
+std::shared_ptr<ast::Expression> Parser::parse_function_expression() {
+    std::optional<std::string> identifier;
+
+    if (peek_next_token().type == lexer::TokenType::Identifier) {
+        auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
+        identifier = identifier_token.value;
+    }
+
+    expect_next_token(lexer::TokenType::LeftParen);
+
+    std::vector<std::string> parameters;
+
+    auto next = next_token();
+
+    while (next.type != lexer::TokenType::RightParen) {
+        assert(next.type == lexer::TokenType::Identifier);
+        parameters.push_back(next.value);
+
+        next = next_token();
+        if (next.type == lexer::TokenType::Comma) {
+            next = next_token();
+        }
+    }
+
+    assert(tokens[index].type == lexer::TokenType::RightParen);
+
+    next_token();
+    auto body = parse_statement();
+
+    return std::make_shared<ast::FunctionExpression>(identifier, parameters, body);
+}
+
 std::shared_ptr<ast::Expression> Parser::parse_update_expression(std::shared_ptr<ast::Expression> left) {
     auto t = tokens[index];
     return std::make_shared<ast::UpdateExpression>(left, ast::token_type_to_operator(t.type), false);
@@ -239,6 +271,10 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
 
                 if (t.value == "true" || t.value == "false") {
                     return parse_expression(std::make_shared<ast::BooleanLiteralExpression>(t.value == "true"));
+                }
+
+                if (t.value == "function") {
+                    return parse_expression(parse_function_expression());
                 }
 
                 assert(false);

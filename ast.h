@@ -65,7 +65,8 @@ VariableType get_variable_type(std::string type);
     MAP(Object) \
     MAP(Array) \
     MAP(Update) \
-    MAP(Ternary)
+    MAP(Ternary) \
+    MAP(Function)
 
 #define STATEMENTS(MAP) \
     MAP(Expression) \
@@ -123,6 +124,7 @@ struct Expression {
     BooleanLiteralExpression* as_boolean_literal();
     ArrayExpression* as_array();
     ObjectExpression* as_object();
+    FunctionExpression* as_function();
     IdentifierExpression* as_identifier();
     CallExpression* as_call();
     VariableDeclarationExpression* as_variable_declaration();
@@ -291,6 +293,17 @@ struct TernaryExpression : public Expression {
     std::shared_ptr<Expression> test;
     std::shared_ptr<Expression> consequent;
     std::shared_ptr<Expression> alternative;
+    nlohmann::json to_json() override;
+};
+
+struct FunctionExpression : public Expression {
+    FunctionExpression(std::optional<std::string> identifier, std::vector<std::string> parameters,
+                       std::shared_ptr<Statement> body)
+            : Expression(ExpressionType::Function), identifier(identifier), parameters(parameters),
+              body(body) {}
+    std::optional<std::string> identifier;
+    std::vector<std::string> parameters;
+    std::shared_ptr<Statement> body;
     nlohmann::json to_json() override;
 };
 

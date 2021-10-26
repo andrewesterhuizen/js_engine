@@ -22,6 +22,7 @@ class Parser {
     std::shared_ptr<ast::Expression> parse_variable_declaration_expression();
     std::shared_ptr<ast::Expression> parse_array_expression();
     std::shared_ptr<ast::Expression> parse_object_expression();
+    std::shared_ptr<ast::Expression> parse_function_expression();
     std::shared_ptr<ast::Expression> parse_update_expression(std::shared_ptr<ast::Expression> left);
     std::shared_ptr<ast::Expression> parse_call_expression(std::shared_ptr<ast::Expression> callee);
     std::shared_ptr<ast::Expression> parse_member_expression(std::shared_ptr<ast::Expression> left);

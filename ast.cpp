@@ -178,6 +178,11 @@ ObjectExpression* Expression::as_object() {
     return as<ObjectExpression>();
 }
 
+FunctionExpression* Expression::as_function() {
+    assert(type == ExpressionType::Function);
+    return as<FunctionExpression>();
+}
+
 IdentifierExpression* Expression::as_identifier() {
     assert(type == ExpressionType::Identifier);
     return as<IdentifierExpression>();
@@ -316,6 +321,7 @@ nlohmann::json ReturnStatement::to_json() {
 nlohmann::json FunctionDeclarationStatement::to_json() {
     nlohmann::json j;
     j["type"] = "FunctionDeclarationStatement";
+    j["parameters"] = parameters;
     j["identifier"] = identifier;
     j["body"] = body->to_json();
     return j;
@@ -453,6 +459,16 @@ nlohmann::json TernaryExpression::to_json() {
     return j;
 }
 
+nlohmann::json FunctionExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "FunctionExpression";
+    j["parameters"] = parameters;
+    if (identifier.has_value()) {
+        j["identifier"] = identifier.value();
+    }
+    j["body"] = body->to_json();
+    return j;
+}
 
 nlohmann::json Program::to_json() {
 
