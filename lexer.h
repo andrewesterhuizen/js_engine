@@ -83,12 +83,12 @@ class Lexer {
     int line = 1;
     int column = 0;
 
-    const std::string keywords_regex = "^(var|if|else|function|true|false|while|for|return|let|const)";
+    const std::string keywords_regex = "^(var|if|else|function|true|false|while|for|return|let|const)(?!\\w)";
 
     std::vector<Pattern> patterns = {
             {keywords_regex,          TokenType::Keyword},
             {"^(_|\\$|[a-zA-Z])\\w*", TokenType::Identifier},
-            {"^\".*\"",               TokenType::String},
+            {"^\"[^\"]*\"",           TokenType::String},
             {"^\\d[.\\d+]*",          TokenType::Number},
             {"^===",                  TokenType::EqualToStrict},
             {"^==",                   TokenType::EqualTo},
