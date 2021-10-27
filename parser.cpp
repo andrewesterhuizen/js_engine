@@ -513,6 +513,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 return s;
             }
 
+            unexpected_token();
             assert(false);
         }
         case lexer::TokenType::Number:

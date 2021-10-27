@@ -85,7 +85,41 @@ class Lexer {
     int line = 1;
     int column = 0;
 
-    const std::string keywords_regex = "^(var|if|else|function|true|false|while|for|return|let|const)(?!\\w)";
+    const std::string keywords_regex = "^("
+                                       "break|"
+                                       "case|"
+                                       "catch|"
+                                       "class|"
+                                       "const|"
+                                       "continue|"
+                                       "debugger|"
+                                       "default|"
+                                       "delete|"
+                                       "do|"
+                                       "else|"
+                                       "export|"
+                                       "extends|"
+                                       "finally|"
+                                       "for|"
+                                       "function|"
+                                       "if|"
+                                       "import|"
+                                       "in|"
+                                       "instanceof|"
+                                       "new|"
+                                       "return|"
+                                       "super|"
+                                       "switch|"
+                                       "this|"
+                                       "throw|"
+                                       "try|"
+                                       "typeof|"
+                                       "var|"
+                                       "void|"
+                                       "while|"
+                                       "with|"
+                                       "yield)"
+                                       "(?!\\w)";
 
     std::vector<Pattern> patterns = {
             {keywords_regex,          TokenType::Keyword},
