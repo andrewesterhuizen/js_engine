@@ -10,6 +10,7 @@
 namespace lexer {
 
 #define TOKENS(MAP) \
+    MAP(EndOfFile) \
     MAP(Keyword) \
     MAP(Identifier) \
     MAP(Number) \
@@ -48,8 +49,9 @@ namespace lexer {
     MAP(RightBracket) \
     MAP(Dot) \
     MAP(QuestionMark) \
-    MAP(NewLine) \
-    MAP(EndOfFile)
+    MAP(Arrow) \
+    MAP(NewLine)
+
 
 #define CREATE_ENUM(NAME) NAME,
 
@@ -90,6 +92,7 @@ class Lexer {
             {"^(_|\\$|[a-zA-Z])\\w*", TokenType::Identifier},
             {"^\"[^\"]*\"",           TokenType::String},
             {"^\\d[.\\d+]*",          TokenType::Number},
+            {"^=>",                   TokenType::Arrow},
             {"^===",                  TokenType::EqualToStrict},
             {"^==",                   TokenType::EqualTo},
             {"^=",                    TokenType::Equals},

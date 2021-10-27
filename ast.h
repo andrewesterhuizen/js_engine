@@ -66,7 +66,8 @@ VariableType get_variable_type(std::string type);
     MAP(Array) \
     MAP(Update) \
     MAP(Ternary) \
-    MAP(Function)
+    MAP(Function) \
+    MAP(ArrowFunction)
 
 #define STATEMENTS(MAP) \
     MAP(Expression) \
@@ -125,6 +126,7 @@ struct Expression {
     ArrayExpression* as_array();
     ObjectExpression* as_object();
     FunctionExpression* as_function();
+    ArrowFunctionExpression* as_arrow_function();
     IdentifierExpression* as_identifier();
     CallExpression* as_call();
     VariableDeclarationExpression* as_variable_declaration();
@@ -302,6 +304,15 @@ struct FunctionExpression : public Expression {
             : Expression(ExpressionType::Function), identifier(identifier), parameters(parameters),
               body(body) {}
     std::optional<std::string> identifier;
+    std::vector<std::string> parameters;
+    std::shared_ptr<Statement> body;
+    nlohmann::json to_json() override;
+};
+
+struct ArrowFunctionExpression : public Expression {
+    ArrowFunctionExpression(std::vector<std::string> parameters, std::shared_ptr<Statement> body)
+            : Expression(ExpressionType::ArrowFunction), parameters(parameters),
+              body(body) {}
     std::vector<std::string> parameters;
     std::shared_ptr<Statement> body;
     nlohmann::json to_json() override;

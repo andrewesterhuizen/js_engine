@@ -3,6 +3,10 @@
 namespace parser {
 
 lexer::Token Parser::next_token() {
+    if (index >= tokens.size()) {
+        return lexer::Token{lexer::TokenType::EndOfFile, ""};
+    }
+
     if (tokens[index].type == lexer::TokenType::EndOfFile) {
         return tokens[index];
     }
@@ -41,6 +45,28 @@ lexer::Token Parser::expect_next_token(lexer::TokenType type) {
 
     return t;
 }
+
+
+void Parser::skip_token_if_type(lexer::TokenType type) {
+    if (peek_next_token().type == type) {
+        next_token();
+    }
+}
+
+lexer::Token Parser::peek_next_token_after_type(lexer::TokenType type) {
+    int i = 0;
+
+    auto next = tokens[index];
+    while (next.type != type) {
+        next = next_token();
+        i++;
+    }
+
+    auto peek = peek_next_token();
+    index -= i;
+    return peek;
+}
+
 
 void Parser::unexpected_token() {
     auto t = tokens[index];
@@ -218,6 +244,45 @@ std::shared_ptr<ast::Expression> Parser::parse_function_expression() {
     return std::make_shared<ast::FunctionExpression>(identifier, parameters, body);
 }
 
+std::shared_ptr<ast::Expression> Parser::parse_arrow_function_expression() {
+    if (peek_next_token().type == lexer::TokenType::Identifier) {
+        auto identifier = expect_next_token(lexer::TokenType::Identifier);
+        expect_next_token(lexer::TokenType::Arrow);
+
+        next_token();
+        auto body = parse_statement();
+
+        auto parameters = std::vector<std::string>{identifier.value};
+
+        return std::make_shared<ast::ArrowFunctionExpression>(parameters, body);
+    }
+
+
+    expect_next_token(lexer::TokenType::LeftParen);
+
+    std::vector<std::string> parameters;
+
+    auto next = next_token();
+
+    while (next.type != lexer::TokenType::RightParen) {
+        assert(next.type == lexer::TokenType::Identifier);
+        parameters.push_back(next.value);
+
+        next = next_token();
+        if (next.type == lexer::TokenType::Comma) {
+            next = next_token();
+        }
+    }
+
+    assert(tokens[index].type == lexer::TokenType::RightParen);
+    expect_next_token(lexer::TokenType::Arrow);
+
+    next_token();
+    auto body = parse_statement();
+
+    return std::make_shared<ast::ArrowFunctionExpression>(parameters, body);
+}
+
 std::shared_ptr<ast::Expression> Parser::parse_update_expression(std::shared_ptr<ast::Expression> left) {
     auto t = tokens[index];
     return std::make_shared<ast::UpdateExpression>(left, ast::token_type_to_operator(t.type), false);
@@ -241,6 +306,19 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
     if (left == nullptr) {
         switch (t.type) {
             case lexer::TokenType::LeftParen: {
+                auto next = peek_next_token();
+
+                if (next.type == lexer::TokenType::RightParen) {
+                    backup();
+                    return parse_arrow_function_expression();
+                }
+
+                if (next.type != lexer::TokenType::LeftParen &&
+                    peek_next_token_after_type(lexer::TokenType::RightParen).type == lexer::TokenType::Arrow) {
+                    backup();
+                    return parse_arrow_function_expression();
+                }
+
                 next_token();
                 auto left = parse_expression(nullptr);
                 expect_next_token(lexer::TokenType::RightParen);
@@ -255,6 +333,11 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
                 return parse_expression(left);
             }
             case lexer::TokenType::Identifier: {
+                if (peek_next_token().type == lexer::TokenType::Arrow) {
+                    backup();
+                    return parse_arrow_function_expression();
+                }
+
                 auto left = std::make_shared<ast::IdentifierExpression>(t.value);
                 return parse_expression(left);
             }
@@ -285,9 +368,14 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
         }
     }
 
+    if (t.type == lexer::TokenType::Semicolon) {
+        return left;
+    }
+
     auto next = next_token();
 
     switch (next.type) {
+        case lexer::TokenType::EndOfFile:
         case lexer::TokenType::Semicolon:
         case lexer::TokenType::RightParen:
         case lexer::TokenType::RightBrace:
@@ -327,7 +415,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
         case lexer::TokenType::Keyword: {
             if (t.value == "var" || t.value == "let" || t.value == "const") {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
-                expect_next_token(lexer::TokenType::Semicolon);
+                skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             } else if (t.value == "if") {
                 std::shared_ptr<ast::Statement> alternative = nullptr;
@@ -411,7 +499,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 return std::make_shared<ast::FunctionDeclarationStatement>(identifier_token.value, parameters, body);
             } else if (t.value == "true" || t.value == "false") {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
-                expect_next_token(lexer::TokenType::Semicolon);
+                skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             } else if (t.value == "return") {
                 auto s = std::make_shared<ast::ReturnStatement>();
@@ -419,7 +507,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 auto next = next_token();
                 if (next.type != lexer::TokenType::Semicolon) {
                     s->argument = parse_expression(nullptr);
-                    expect_next_token(lexer::TokenType::Semicolon);
+                    skip_token_if_type(lexer::TokenType::Semicolon);
                 }
 
                 return s;
@@ -432,17 +520,17 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
         case lexer::TokenType::LeftBracket:
         case lexer::TokenType::Identifier: {
             auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
-            expect_next_token(lexer::TokenType::Semicolon);
+            skip_token_if_type(lexer::TokenType::Semicolon);
             return s;
         }
         case lexer::TokenType::LeftParen: {
             auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
-            expect_next_token(lexer::TokenType::Semicolon);
+            skip_token_if_type(lexer::TokenType::Semicolon);
             return s;
         }
         case lexer::TokenType::LeftBrace: {
             auto s = std::make_shared<ast::BlockStatement>(parse_statements());
-            expect_next_token(lexer::TokenType::RightBrace);
+            skip_token_if_type(lexer::TokenType::RightBrace);
             return s;
         }
         default:

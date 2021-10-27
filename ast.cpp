@@ -183,6 +183,11 @@ FunctionExpression* Expression::as_function() {
     return as<FunctionExpression>();
 }
 
+ArrowFunctionExpression* Expression::as_arrow_function() {
+    assert(type == ExpressionType::ArrowFunction);
+    return as<ArrowFunctionExpression>();
+}
+
 IdentifierExpression* Expression::as_identifier() {
     assert(type == ExpressionType::Identifier);
     return as<IdentifierExpression>();
@@ -466,6 +471,14 @@ nlohmann::json FunctionExpression::to_json() {
     if (identifier.has_value()) {
         j["identifier"] = identifier.value();
     }
+    j["body"] = body->to_json();
+    return j;
+}
+
+nlohmann::json ArrowFunctionExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "ArrowFunctionExpression";
+    j["parameters"] = parameters;
     j["body"] = body->to_json();
     return j;
 }

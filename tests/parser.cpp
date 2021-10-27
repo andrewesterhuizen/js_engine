@@ -201,6 +201,92 @@ TEST_CASE("Parser parses expressions", "[parser][ast]") {
         auto value = expression->value->as_number_literal();
         REQUIRE(value->value == 1);
     }
+
+    SECTION("arrow function expression") {
+        auto source = R"(() => 123;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_arrow_function();
+
+        REQUIRE(expression->parameters.size() == 0);
+
+        auto body = expression->body->as_expression_statement();
+        auto value = body->expression->as_number_literal();
+        REQUIRE(value->value == 123);
+    }
+
+    SECTION("arrow function expression with body") {
+        auto source = R"(() => { return 123; };)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_arrow_function();
+
+        REQUIRE(expression->parameters.size() == 0);
+
+        auto block = expression->body->as_block();
+        REQUIRE(block->body.size() == 1);
+        auto return_statement = block->body.at(0)->as_return();
+        auto return_value = return_statement->argument->as_number_literal();
+        REQUIRE(return_value->value == 123);
+    }
+
+    SECTION("arrow function expression with parameters") {
+        auto source = R"((a,b) => 123;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_arrow_function();
+
+        REQUIRE(expression->parameters.size() == 2);
+        REQUIRE(expression->parameters.at(0) == "a");
+        REQUIRE(expression->parameters.at(1) == "b");
+
+        auto body = expression->body->as_expression_statement();
+        auto value = body->expression->as_number_literal();
+        REQUIRE(value->value == 123);
+    }
+
+    SECTION("arrow function expression with single parameter") {
+        auto source = R"(a => 123;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto expression = expression_statement->expression->as_arrow_function();
+
+        REQUIRE(expression->parameters.size() == 1);
+        REQUIRE(expression->parameters.at(0) == "a");
+
+        auto body = expression->body->as_expression_statement();
+        auto value = body->expression->as_number_literal();
+        REQUIRE(value->value == 123);
+    }
+
+    SECTION("arrow function expression assigned to variable") {
+        auto source = R"(const x = (a) => 123;)";
+        auto ast = get_ast(source);
+
+        REQUIRE(ast.body.size() == 1);
+        auto expression_statement = ast.body[0]->as_expression_statement();
+        auto declaration = expression_statement->expression->as_variable_declaration();
+
+        REQUIRE(declaration->identifiers.size() == 1);
+        REQUIRE(declaration->identifiers.at(0) == "x");
+
+        auto func = declaration->value->as_arrow_function();
+
+        REQUIRE(func->parameters.size() == 1);
+        REQUIRE(func->parameters.at(0) == "a");
+
+        auto body = func->body->as_expression_statement();
+        auto value = body->expression->as_number_literal();
+        REQUIRE(value->value == 123);
+    }
 }
 
 
