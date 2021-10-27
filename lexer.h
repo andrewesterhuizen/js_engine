@@ -33,6 +33,7 @@ namespace lexer {
     MAP(EqualToStrict) \
     MAP(NotEqualTo) \
     MAP(NotEqualToStrict)   \
+    MAP(Not) \
     MAP(LessThan) \
     MAP(LessThanOrEqualTo) \
     MAP(GreaterThan) \
@@ -99,6 +100,7 @@ class Lexer {
                                        "else|"
                                        "export|"
                                        "extends|"
+                                       "false|"
                                        "finally|"
                                        "for|"
                                        "function|"
@@ -112,6 +114,7 @@ class Lexer {
                                        "switch|"
                                        "this|"
                                        "throw|"
+                                       "true|"
                                        "try|"
                                        "typeof|"
                                        "var|"
@@ -139,6 +142,7 @@ class Lexer {
             {"^\\|\\|",               TokenType::Or},
             {"^!==",                  TokenType::NotEqualToStrict},
             {"^!=",                   TokenType::NotEqualTo},
+            {"^!",                    TokenType::Not},
             {"^\\+=",                 TokenType::AdditionAssignment},
             {"^\\+\\+",               TokenType::Increment},
             {"^\\+",                  TokenType::Plus},

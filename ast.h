@@ -32,7 +32,8 @@ namespace ast {
     MAP(GreaterThan) \
     MAP(GreaterThanOrEqualTo) \
     MAP(LessThan) \
-    MAP(LessThanOrEqualTo)
+    MAP(LessThanOrEqualTo)  \
+    MAP(Not)
 
 #define CREATE_ENUM(NAME) NAME,
 
@@ -67,7 +68,8 @@ VariableType get_variable_type(std::string type);
     MAP(Update) \
     MAP(Ternary) \
     MAP(Function) \
-    MAP(ArrowFunction)
+    MAP(ArrowFunction)   \
+    MAP(Unary)
 
 #define STATEMENTS(MAP) \
     MAP(Expression) \
@@ -132,6 +134,7 @@ struct Expression {
     VariableDeclarationExpression* as_variable_declaration();
     MemberExpression* as_member();
     BinaryExpression* as_binary();
+    UnaryExpression* as_unary();
     AssignmentExpression* as_assignment();
     UpdateExpression* as_update();
     TernaryExpression* as_ternary();
@@ -254,6 +257,14 @@ struct BinaryExpression : public Expression {
             : Expression(ExpressionType::Binary), left(left), right(right), op(op) {}
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
+    Operator op;
+    nlohmann::json to_json() override;
+};
+
+struct UnaryExpression : public Expression {
+    UnaryExpression(std::shared_ptr<Expression> argument, Operator op)
+            : Expression(ExpressionType::Unary), argument(argument), op(op) {}
+    std::shared_ptr<Expression> argument;
     Operator op;
     nlohmann::json to_json() override;
 };

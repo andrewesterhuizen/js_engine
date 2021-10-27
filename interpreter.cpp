@@ -368,7 +368,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                         case ast::Operator::MultiplicationAssignment:
                         case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
-                        case ast::Operator::Decrement: {
+                        case ast::Operator::Decrement:
+                        case ast::Operator::Not: {
                             assert(false);
                         }
                     }
@@ -424,7 +425,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                         case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
                         case ast::Operator::Decrement:
-                        case ast::Operator::Exponentiation: {
+                        case ast::Operator::Exponentiation:
+                        case ast::Operator::Not: {
                             assert(false);
                         }
                     }
@@ -432,6 +434,10 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
             }
 
             assert(false);
+        }
+        case ast::ExpressionType::Unary: {
+            auto e = expression->as_unary();
+            return om.new_boolean(!execute(e->argument)->is_truthy());
         }
         case ast::ExpressionType::Update: {
             auto e = expression->as_update();
@@ -511,7 +517,7 @@ void Interpreter::run(ast::Program &program) {
 object::Value* Interpreter::get_variable(std::string name) {
     auto v = om.get_variable(name);
     if (v == nullptr) {
-        throw_error("ReferenceError", name + " is not defined");
+        throw_error("ReferenceError", name + " is not defined\n");
         assert(false);
     }
 

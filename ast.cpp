@@ -52,6 +52,8 @@ std::string operator_to_string(Operator op) {
             return "**";
         case Operator::NotEqualToStrict:
             return "!==";
+        case Operator::Not:
+            return "!";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -211,6 +213,11 @@ MemberExpression* Expression::as_member() {
 BinaryExpression* Expression::as_binary() {
     assert(type == ExpressionType::Binary);
     return as<BinaryExpression>();
+}
+
+UnaryExpression* Expression::as_unary() {
+    assert(type == ExpressionType::Unary);
+    return as<UnaryExpression>();
 }
 
 AssignmentExpression* Expression::as_assignment() {
@@ -397,6 +404,14 @@ nlohmann::json BinaryExpression::to_json() {
     j["type"] = "BinaryExpression";
     j["left"] = left->to_json();
     j["left"] = right->to_json();
+    j["op"] = operator_to_string(op);
+    return j;
+}
+
+nlohmann::json UnaryExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "UnaryExpression";
+    j["argument"] = argument->to_json();
     j["op"] = operator_to_string(op);
     return j;
 }

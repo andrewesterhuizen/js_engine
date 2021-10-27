@@ -305,6 +305,10 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
 
     if (left == nullptr) {
         switch (t.type) {
+            case lexer::TokenType::Not: {
+                next_token();
+                return std::make_shared<ast::UnaryExpression>(parse_expression(nullptr), ast::Operator::Not);
+            }
             case lexer::TokenType::LeftParen: {
                 auto next = peek_next_token();
 

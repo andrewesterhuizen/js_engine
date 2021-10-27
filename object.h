@@ -109,7 +109,7 @@ struct Value {
             case Type::String:
                 return "\"" + std::get<std::string>(value) + "\"";
             case Type::Boolean:
-                return std::get<bool>(value) ? "true" : "False";
+                return std::get<bool>(value) ? "true" : "false";
             case Type::Undefined:
                 return "undefined";
         }
