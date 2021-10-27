@@ -7,7 +7,7 @@ ObjectManager::Scope* ObjectManager::current_scope() {
 }
 
 void ObjectManager::push_scope() {
-    scopes.push_back(Scope{});
+    scopes.push_back(Scope{*this});
     current_scope_index++;
 }
 
@@ -15,7 +15,6 @@ void ObjectManager::pop_scope() {
     scopes.pop_back();
     current_scope_index--;
 }
-
 
 object::Value* ObjectManager::get_variable(std::string name) {
     auto i = current_scope_index;
@@ -96,8 +95,19 @@ T* ObjectManager::allocate(Args &&... args) {
 
     auto o = new T(std::forward<Args>(args)...);
     objects[o] = Cell{o, true};
-    current_scope()->values_in_scope.insert(o);
+
+    if (scopes.size() > 0) {
+        current_scope()->values_in_scope.insert(o);
+    }
     return o;
+}
+
+ObjectManager::Scope* ObjectManager::global_scope() {
+    return &scopes[0];
+}
+
+Value* ObjectManager::global_object() {
+    return global;
 }
 
 void Value::register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler) {

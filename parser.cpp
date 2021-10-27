@@ -364,6 +364,10 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
                     return parse_expression(parse_function_expression());
                 }
 
+                if(t.value == "this") {
+                    return parse_expression(std::make_shared<ast::ThisExpression>());
+                }
+
                 assert(false);
             }
             default:
@@ -514,6 +518,10 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                     skip_token_if_type(lexer::TokenType::Semicolon);
                 }
 
+                return s;
+            } else if(t.value == "this") {
+                auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
+                skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             }
 

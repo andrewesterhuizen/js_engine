@@ -69,7 +69,8 @@ VariableType get_variable_type(std::string type);
     MAP(Ternary) \
     MAP(Function) \
     MAP(ArrowFunction)   \
-    MAP(Unary)
+    MAP(Unary) \
+    MAP(This)
 
 #define STATEMENTS(MAP) \
     MAP(Expression) \
@@ -326,6 +327,11 @@ struct ArrowFunctionExpression : public Expression {
               body(body) {}
     std::vector<std::string> parameters;
     std::shared_ptr<Statement> body;
+    nlohmann::json to_json() override;
+};
+
+struct ThisExpression : public Expression {
+    ThisExpression() : Expression(ExpressionType::This) {}
     nlohmann::json to_json() override;
 };
 

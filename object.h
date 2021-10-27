@@ -69,49 +69,67 @@ struct Value {
         return std::get<std::string>(value);
     }
 
-    std::string to_string() {
+    nlohmann::json to_json() {
         switch (type) {
             case Type::Object: {
                 nlohmann::json j;
 
                 for (auto p: properties) {
-                    j[p.first] = p.second->to_string();
+                    j[p.first] = p.second->to_json();
                 }
 
                 if (j.empty()) {
                     return "{}";
                 }
 
-                return j.dump(4);
+                return j;
             }
             case Type::Function:
-                return "Function";
+                return function()->is_builtin ? "Native Function" : "Function";
             case Type::Array: {
                 nlohmann::json j;
 
-                std::vector<std::string> element_strings;
+                std::vector<nlohmann::json> element_strings;
 
                 auto array = std::get<Array>(value);
                 for (auto e: array.elements) {
-                    element_strings.push_back(e->to_string());
+                    element_strings.push_back(e->to_json());
                 }
 
                 j = element_strings;
 
-                if (j.empty()) {
-                    return "[]";
+                return j;
+            }
+            case Type::Number:
+                return std::get<double>(value);
+            case Type::String:
+                return std::get<std::string>(value);
+            case Type::Boolean:
+                return std::get<bool>(value);
+            case Type::Undefined:
+                return "undefined";
+        }
+    }
+
+
+    std::string to_string() {
+        switch (type) {
+            case Type::Object: {
+                nlohmann::json j;
+
+                for (auto p: properties) {
+                    j[p.first] = p.second->to_json();
                 }
 
                 return j.dump(4);
             }
+            case Type::Function:
+            case Type::Array:
             case Type::Number:
-                return std::to_string(std::get<double>(value));
             case Type::String:
-                return "\"" + std::get<std::string>(value) + "\"";
             case Type::Boolean:
-                return std::get<bool>(value) ? "true" : "false";
             case Type::Undefined:
-                return "undefined";
+                return to_json().dump(4);
         }
     }
 
@@ -210,10 +228,19 @@ public:
 
 class ObjectManager {
     struct Scope {
+        ObjectManager &om;
+        bool is_global;
+
+        Scope(ObjectManager &om, bool is_global = false) : om(om), is_global(is_global) {}
+
         std::unordered_set<Value*> values_in_scope;
         std::unordered_map<std::string, Value*> variables;
 
         Value* get_variable(std::string name) {
+            if (is_global) {
+                return om.global_object()->get_property(om, name);
+            }
+
             if (auto entry = variables.find(name); entry != variables.end()) {
                 return entry->second;
             }
@@ -222,6 +249,10 @@ class ObjectManager {
         }
 
         Value* set_variable(std::string name, Value* value) {
+            if (is_global) {
+                return om.global_object()->set_property(name, value);
+            }
+
             variables[name] = value;
             return value;
         }
@@ -240,6 +271,8 @@ class ObjectManager {
     const int gc_threshold = 25000;
     int gc_amount = 0;
     int objects_collected = 0;
+
+    Value* global;
 
     void collect_garbage();
 
@@ -262,10 +295,13 @@ class ObjectManager {
         return false;
     }
 
+
 public:
     ObjectManager() {
+        global = new_object();
+        global->prototype.reset();
         // push top level scope
-        scopes.push_back(Scope{});
+        scopes.push_back(Scope{*this, true});
     }
 
     Value* new_object() {
@@ -294,6 +330,7 @@ public:
     void pop_scope();
     Scope* current_scope();
     Scope* global_scope();
+    Value* global_object();
     Value* get_variable(std::string name);
     Value* set_variable(std::string name, Value* value);
     Value* declare_variable(std::string name, Value* value);

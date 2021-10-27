@@ -498,6 +498,12 @@ nlohmann::json ArrowFunctionExpression::to_json() {
     return j;
 }
 
+nlohmann::json ThisExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "ThisExpression";
+    return j;
+}
+
 nlohmann::json Program::to_json() {
 
     nlohmann::json j;

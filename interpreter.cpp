@@ -84,6 +84,9 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
 
 object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
     switch (expression->type) {
+        case ast::ExpressionType::This: {
+            return om.global_object();
+        }
         case ast::ExpressionType::Call: {
             auto e = expression->as_call();
 
@@ -117,8 +120,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 return call_function(object, func_obj, args);
             }
 
-            // TODO: pass global this context
-            return call_function(nullptr, func_obj, args);
+            return call_function(om.global_object(), func_obj, args);
         }
         case ast::ExpressionType::Member: {
             auto e = expression->as_member();
@@ -207,8 +209,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 auto left = e->left->as_member();
 
                 if (left->is_computed) {
-                    auto object_name = left->object->as_identifier();
-                    auto object = get_variable(object_name->name);
+                    auto object = execute(left->object);
 
                     auto property = execute(left->property);
                     if (property->type == object::Value::Type::Number) {
@@ -223,14 +224,9 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
 
                     assert(false);
                 } else {
-                    auto left_id = left->object->as_identifier();
-                    auto object = get_variable(left_id->name);
-
-                    auto right_id = left->property->as_identifier();
-
-                    object->properties[right_id->name] = right;
-
-                    return right;
+                    auto object = execute(left->object);
+                    auto property = left->property->as_identifier();
+                    return object->set_property(property->name, right);
                 }
             }
 
@@ -535,7 +531,7 @@ object::Value* Interpreter::set_variable(std::string name, object::Value* value)
 void Interpreter::create_builtin_objects() {
     // console
     auto console = om.new_object();
-    om.current_scope()->set_variable("console", console);
+    om.global_object()->set_property("console", console);
 
     console->register_native_method(om, "log", [&](object::Value*, std::vector<object::Value*> args) {
         std::string out;
@@ -551,7 +547,7 @@ void Interpreter::create_builtin_objects() {
 
     // Math
     auto Math = om.new_object();
-    om.current_scope()->set_variable("Math", Math);
+    om.global_object()->set_property("Math", Math);
     Math->register_native_method(om, "abs", [&](object::Value*, std::vector<object::Value*> args) {
         return om.new_number(std::fabs(args[0]->number()));
     });
@@ -564,7 +560,7 @@ void Interpreter::create_builtin_objects() {
 
     // Array
     auto Array = om.new_object();
-    om.current_scope()->set_variable("Array", Array);
+    om.global_object()->set_property("Array", Array);
 
     Array->register_native_method(om, "push", [&](object::Value* this_context, std::vector<object::Value*> args) {
         auto array = this_context->array();
