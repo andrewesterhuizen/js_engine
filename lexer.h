@@ -32,7 +32,7 @@ namespace lexer {
     MAP(EqualTo) \
     MAP(EqualToStrict) \
     MAP(NotEqualTo) \
-    MAP(NotEqualToStrict) \
+    MAP(NotEqualToStrict)   \
     MAP(LessThan) \
     MAP(LessThanOrEqualTo) \
     MAP(GreaterThan) \
@@ -91,6 +91,7 @@ class Lexer {
             {keywords_regex,          TokenType::Keyword},
             {"^(_|\\$|[a-zA-Z])\\w*", TokenType::Identifier},
             {"^\"[^\"]*\"",           TokenType::String},
+            {"^'[^']*'",              TokenType::String},
             {"^\\d[.\\d+]*",          TokenType::Number},
             {"^=>",                   TokenType::Arrow},
             {"^===",                  TokenType::EqualToStrict},
@@ -135,6 +136,7 @@ class Lexer {
     char next_char();
     std::string get_rest_of_line();
     void skip_whitespace();
+    void skip_multi_line_comment();
     void get_token();
 public:
     std::vector<Token> get_tokens(std::string src);

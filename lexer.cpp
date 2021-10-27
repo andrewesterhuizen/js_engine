@@ -66,6 +66,25 @@ void Lexer::skip_whitespace() {
     }
 }
 
+void Lexer::skip_multi_line_comment() {
+    auto c = source[index];
+    auto s = source.substr(index, 2);
+
+    while (s != "*/") {
+        column++;
+        if (c == '\n') {
+            line++;
+            column = 0;
+        }
+
+
+        c = next_char();
+        if (c == '\0') break;
+
+        s = source.substr(index, 2);
+    }
+}
+
 void Lexer::get_token() {
     skip_whitespace();
 
@@ -76,6 +95,10 @@ void Lexer::get_token() {
         line++;
         column = 0;
         return;
+    }
+
+    if (text.starts_with("/*")) {
+        skip_multi_line_comment();
     }
 
     std::smatch match;
