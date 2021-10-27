@@ -103,7 +103,6 @@ std::shared_ptr<ast::Expression> Parser::parse_binary_expression(std::shared_ptr
     return std::make_shared<ast::BinaryExpression>(left, right, op);
 }
 
-
 std::shared_ptr<ast::Expression> Parser::parse_call_expression(std::shared_ptr<ast::Expression> callee) {
     auto next = tokens[index];
 
@@ -127,6 +126,34 @@ std::shared_ptr<ast::Expression> Parser::parse_call_expression(std::shared_ptr<a
     }
 
     return call_expression;
+}
+
+std::shared_ptr<ast::Expression> Parser::parse_new_expression() {
+    auto next = tokens[index];
+
+    // TODO: technically this can be any type of expression that returns a constructor function
+    auto identifier_token = expect_next_token(lexer::TokenType::Identifier);
+    auto callee = std::make_shared<ast::IdentifierExpression>(identifier_token.value);
+    auto expression = std::make_shared<ast::NewExpression>(callee);
+
+    expect_next_token(lexer::TokenType::LeftParen);
+
+    next = next_token();
+    while (next.type != lexer::TokenType::RightParen) {
+        auto arg = parse_expression(nullptr);
+        expression->arguments.push_back(arg);
+
+        if (peek_next_token().type == lexer::TokenType::Semicolon) {
+            break;
+        }
+
+        next = next_token();
+        if (next.type == lexer::TokenType::Comma) {
+            next = next_token();
+        }
+    }
+
+    return expression;
 }
 
 std::shared_ptr<ast::Expression> Parser::parse_assignment_expression(std::shared_ptr<ast::Expression> left) {
@@ -364,8 +391,12 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
                     return parse_expression(parse_function_expression());
                 }
 
-                if(t.value == "this") {
+                if (t.value == "this") {
                     return parse_expression(std::make_shared<ast::ThisExpression>());
+                }
+
+                if (t.value == "new") {
+                    return parse_new_expression();
                 }
 
                 assert(false);
@@ -519,7 +550,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 }
 
                 return s;
-            } else if(t.value == "this") {
+            } else if (t.value == "this") {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
                 skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;

@@ -235,6 +235,10 @@ TernaryExpression* Expression::as_ternary() {
     return as<TernaryExpression>();
 }
 
+NewExpression* Expression::as_new() {
+    assert(type == ExpressionType::New);
+    return as<NewExpression>();
+}
 
 template<typename T>
 T* Statement::as() {
@@ -358,7 +362,7 @@ nlohmann::json CallExpression::to_json() {
         args.push_back(arg->to_json());
     }
 
-    j["expression"] = args;
+    j["arguments"] = args;
     return j;
 }
 
@@ -501,6 +505,23 @@ nlohmann::json ArrowFunctionExpression::to_json() {
 nlohmann::json ThisExpression::to_json() {
     nlohmann::json j;
     j["type"] = "ThisExpression";
+    return j;
+}
+
+nlohmann::json NewExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "NewExpression";
+    j["callee"] = callee->to_json();
+
+    std::vector<nlohmann::json> args;
+
+    for (auto arg: arguments) {
+        args.push_back(arg->to_json());
+    }
+
+
+    j["arguments"] = args;
+
     return j;
 }
 

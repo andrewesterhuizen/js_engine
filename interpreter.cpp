@@ -47,15 +47,11 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
             for (auto s: s->body) {
                 final_value = execute(s);
                 if (s->type == ast::StatementType::Return) {
-                    return final_value;
+                    return final_value != nullptr ? final_value : om.new_undefined();
                 }
             }
 
-            if (final_value == nullptr) {
-                return om.new_undefined();
-            }
-
-            return final_value;
+            return om.new_undefined();
         }
         case ast::StatementType::FunctionDeclaration: {
             auto s = statement->as_function_declaration();
@@ -84,8 +80,31 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
 
 object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression) {
     switch (expression->type) {
+        case ast::ExpressionType::New: {
+            auto e = expression->as_new();
+            auto constructor = execute(e->callee);
+            assert(constructor->type == object::Value::Type::Function);
+
+            auto instance = om.new_object();
+
+            // TODO: this should point to the constructor functions prototype when we have a better prototype implementation
+            instance->set_property("__proto__", om.new_undefined());
+
+            std::vector<object::Value*> args;
+            for(auto arg : e->arguments) {
+                args.push_back(execute(arg));
+            }
+
+            auto result = call_function(instance, constructor, args);
+            if(!result->is_undefined()) {
+                return result;
+            }
+
+            return instance;
+        }
+
         case ast::ExpressionType::This: {
-            return om.global_object();
+            return om.current_scope()->this_context();
         }
         case ast::ExpressionType::Call: {
             auto e = expression->as_call();
@@ -467,16 +486,16 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
 }
 
 object::Value*
-Interpreter::call_function(object::Value* this_context, object::Value* func_value, std::vector<object::Value*> args) {
+Interpreter::call_function(object::Value* context, object::Value* func_value, std::vector<object::Value*> args) {
     assert(func_value->type == object::Value::Type::Function);
 
     auto func = func_value->function();
 
     if (func->is_builtin) {
-        return func->builtin_func(this_context, args);
+        return func->builtin_func(context, args);
     }
 
-    om.push_scope();
+    om.push_scope(context);
 
     for (auto i = 0; i < func->parameters.size(); i++) {
         auto has_arg = i < args.size();
@@ -562,18 +581,18 @@ void Interpreter::create_builtin_objects() {
     auto Array = om.new_object();
     om.global_object()->set_property("Array", Array);
 
-    Array->register_native_method(om, "push", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto array = this_context->array();
+    Array->register_native_method(om, "push", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto array = context->array();
 
         for (auto arg: args) {
             array->elements.push_back(arg);
         }
 
-        return this_context->get_property(om, "length");
+        return context->get_property(om, "length");
     });
 
-    Array->register_native_method(om, "pop", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto array = this_context->array();
+    Array->register_native_method(om, "pop", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto array = context->array();
 
         if (array->elements.size() == 0) {
             return om.new_undefined();
@@ -584,20 +603,20 @@ void Interpreter::create_builtin_objects() {
         return value;
     });
 
-    Array->register_native_method(om, "forEach", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto caller_obj = this_context->array();
+    Array->register_native_method(om, "forEach", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto caller_obj = context->array();
         auto callback = args[0];
 
         for (auto i = 0; i < caller_obj->elements.size(); i++) {
             auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
-            call_function(this_context, callback, args);
+            call_function(context, callback, args);
         }
 
         return om.new_undefined();
     });
 
-    Array->register_native_method(om, "map", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto caller_obj = this_context->array();
+    Array->register_native_method(om, "map", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto caller_obj = context->array();
         auto callback = args[0];
 
         auto result_value = om.new_array();
@@ -605,15 +624,15 @@ void Interpreter::create_builtin_objects() {
 
         for (auto i = 0; i < caller_obj->elements.size(); i++) {
             auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
-            auto v = call_function(this_context, callback, args);
+            auto v = call_function(context, callback, args);
             result->elements.push_back(v);
         }
 
         return result_value;
     });
 
-    Array->register_native_method(om, "filter", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto caller_obj = this_context->array();
+    Array->register_native_method(om, "filter", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto caller_obj = context->array();
         auto callback = args[0];
 
         auto result_value = om.new_array();
@@ -621,7 +640,7 @@ void Interpreter::create_builtin_objects() {
 
         for (auto i = 0; i < caller_obj->elements.size(); i++) {
             auto args = std::vector<object::Value*>{caller_obj->elements[i], om.new_number(i)};
-            auto v = call_function(this_context, callback, args);
+            auto v = call_function(context, callback, args);
             if (v->is_truthy()) {
                 result->elements.push_back(v);
             }
@@ -630,8 +649,8 @@ void Interpreter::create_builtin_objects() {
         return result_value;
     });
 
-    Array->register_native_method(om, "reduce", [&](object::Value* this_context, std::vector<object::Value*> args) {
-        auto caller_obj = this_context->array();
+    Array->register_native_method(om, "reduce", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto caller_obj = context->array();
         auto callback = args[0];
         auto initial_value = args[1];
 
@@ -639,7 +658,7 @@ void Interpreter::create_builtin_objects() {
 
         for (auto i = 0; i < caller_obj->elements.size(); i++) {
             auto args = std::vector<object::Value*>{prev, caller_obj->elements[i], om.new_number(i)};
-            prev = call_function(this_context, callback, args);
+            prev = call_function(context, callback, args);
         }
 
         return prev;

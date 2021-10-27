@@ -1,15 +1,12 @@
-console.log(this);
+function MessageLogger(message) {
+    this.message = message;
 
-var x = 123;
-
-console.log(x);
-console.log(this.x);
-
-function f() {
-    console.log("f called");
-    this.y = 234;
+    this.logMessage = function() {
+        console.log(this.message);
+    };
 }
 
-f();
 
-console.log("y:", y);
+const instance = new MessageLogger("hello from instance of class");
+instance.logMessage();
+console.log(instance);

@@ -6,8 +6,8 @@ ObjectManager::Scope* ObjectManager::current_scope() {
     return &scopes[current_scope_index];
 }
 
-void ObjectManager::push_scope() {
-    scopes.push_back(Scope{*this});
+void ObjectManager::push_scope(Value* context) {
+    scopes.push_back(Scope{*this, context});
     current_scope_index++;
 }
 

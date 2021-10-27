@@ -68,9 +68,10 @@ VariableType get_variable_type(std::string type);
     MAP(Update) \
     MAP(Ternary) \
     MAP(Function) \
-    MAP(ArrowFunction)   \
+    MAP(ArrowFunction) \
     MAP(Unary) \
-    MAP(This)
+    MAP(This) \
+    MAP(New)
 
 #define STATEMENTS(MAP) \
     MAP(Expression) \
@@ -139,6 +140,7 @@ struct Expression {
     AssignmentExpression* as_assignment();
     UpdateExpression* as_update();
     TernaryExpression* as_ternary();
+    NewExpression* as_new();
 };
 
 struct ExpressionStatement : public Statement {
@@ -332,6 +334,13 @@ struct ArrowFunctionExpression : public Expression {
 
 struct ThisExpression : public Expression {
     ThisExpression() : Expression(ExpressionType::This) {}
+    nlohmann::json to_json() override;
+};
+
+struct NewExpression : public Expression {
+    NewExpression(std::shared_ptr<Expression> callee) : Expression(ExpressionType::New), callee(callee) {}
+    std::shared_ptr<Expression> callee;
+    std::vector<std::shared_ptr<Expression>> arguments;
     nlohmann::json to_json() override;
 };
 

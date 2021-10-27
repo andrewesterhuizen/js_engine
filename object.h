@@ -229,16 +229,18 @@ public:
 class ObjectManager {
     struct Scope {
         ObjectManager &om;
+        Value* context;
         bool is_global;
 
-        Scope(ObjectManager &om, bool is_global = false) : om(om), is_global(is_global) {}
+        Scope(ObjectManager &om, Value* context, bool is_global = false)
+                : om(om), context(context), is_global(is_global) {}
 
         std::unordered_set<Value*> values_in_scope;
         std::unordered_map<std::string, Value*> variables;
 
         Value* get_variable(std::string name) {
             if (is_global) {
-                return om.global_object()->get_property(om, name);
+                return context->get_property(om, name);
             }
 
             if (auto entry = variables.find(name); entry != variables.end()) {
@@ -250,11 +252,15 @@ class ObjectManager {
 
         Value* set_variable(std::string name, Value* value) {
             if (is_global) {
-                return om.global_object()->set_property(name, value);
+                return context->set_property(name, value);
             }
 
             variables[name] = value;
             return value;
+        }
+
+        Value* this_context() {
+            return context;
         }
     };
 
@@ -301,7 +307,7 @@ public:
         global = new_object();
         global->prototype.reset();
         // push top level scope
-        scopes.push_back(Scope{*this, true});
+        scopes.push_back(Scope{*this, global, true});
     }
 
     Value* new_object() {
@@ -326,7 +332,7 @@ public:
         return ValueFactory::undefined(allocate<Value>());
     }
 
-    void push_scope();
+    void push_scope(Value* context);
     void pop_scope();
     Scope* current_scope();
     Scope* global_scope();
