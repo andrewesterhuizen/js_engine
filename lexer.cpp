@@ -83,6 +83,8 @@ void Lexer::skip_multi_line_comment() {
 
         s = source.substr(index, 2);
     }
+
+    index += 2;
 }
 
 void Lexer::get_token() {
@@ -99,6 +101,7 @@ void Lexer::get_token() {
 
     if (text.starts_with("/*")) {
         skip_multi_line_comment();
+        return;
     }
 
     std::smatch match;
