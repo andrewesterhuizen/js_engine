@@ -10,13 +10,29 @@
 #include "lexer.h"
 #include "parser.h"
 
+std::vector<std::string> get_files(std::string files_arg) {
+    std::string arg_name = "--files=";
+    std::vector<std::string> files;
+
+    auto files_args_list = files_arg.substr(arg_name.length(), files_arg.size());
+
+    std::string out;
+    std::stringstream ss(files_args_list);
+
+    while (getline(ss, out, ',')) {
+        files.push_back(out);
+    }
+
+    return files;
+}
+
 int main(int argc, char* argv[]) {
-    if(argc < 2) {
+    if (argc < 2) {
         std::cerr << "no file specified\n";
         return 1;
     }
 
-    auto file_name = argv[1];
+    auto files_arg = argv[1];
     std::set<std::string> args(argv + 1, argv + argc);
 
     for (auto arg: args) {
@@ -26,14 +42,20 @@ int main(int argc, char* argv[]) {
     auto output_tokens = args.find("--output-tokens") != args.end();
     auto output_ast = args.find("--output-ast") != args.end();
 
-    std::ifstream file(file_name);
-    if(!file.is_open()) {
-        std::cerr << "unable to open file " << file_name << "\n";
-        return 1;
-    }
+    auto files = get_files(files_arg);
 
     std::stringstream source_buffer;
-    source_buffer << file.rdbuf();
+
+    for (auto f: files) {
+        std::ifstream file(f);
+        if (!file.is_open()) {
+            std::cerr << "unable to open file " << f << "\n";
+            return 1;
+        }
+
+        source_buffer << file.rdbuf();
+    }
+
     auto source = source_buffer.str();
 
     // get tokens
