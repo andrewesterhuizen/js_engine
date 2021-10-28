@@ -6,6 +6,23 @@ namespace interpreter {
 
 object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
     switch (statement->type) {
+        case ast::StatementType::Throw: {
+            auto s = statement->as_throw();
+            auto arg = execute(s->argument);
+            throw arg;
+        }
+        case ast::StatementType::TryCatch: {
+            auto s = statement->as_trycatch();
+            try {
+                return execute(s->try_body);
+            } catch (object::Value* error) {
+                om.push_scope(om.new_object());
+                om.current_scope()->set_variable(s->catch_identifier, error);
+                execute(s->catch_body);
+                om.pop_scope();
+                return om.new_undefined();
+            }
+        }
         case ast::StatementType::Expression: {
             auto s = statement->as_expression_statement();
             return execute(s->expression);
@@ -91,12 +108,12 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
             instance->set_property("__proto__", om.new_undefined());
 
             std::vector<object::Value*> args;
-            for(auto arg : e->arguments) {
+            for (auto arg: e->arguments) {
                 args.push_back(execute(arg));
             }
 
             auto result = call_function(instance, constructor, args);
-            if(!result->is_undefined()) {
+            if (!result->is_undefined()) {
                 return result;
             }
 
@@ -515,16 +532,18 @@ void Interpreter::throw_error(std::string type, std::string message) {
 }
 
 void Interpreter::run(ast::Program &program) {
-    object::Value* final_value;
-
-    // TODO: there is probably a way to do this without exceptions but this is quick and easy
     try {
         for (auto s: program.body) {
-            final_value = execute(s);
+            execute(s);
         }
     }
     catch (Error error) {
+        // TODO: Error should be a Value*
         std::cerr << error.type << ": " << error.message;
+        return;
+    }
+    catch (object::Value* error) {
+        std::cerr << error->to_string() << "\n";
         return;
     }
 }

@@ -399,6 +399,7 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
                     return parse_new_expression();
                 }
 
+                unexpected_token();
                 assert(false);
             }
             default:
@@ -552,6 +553,28 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 return s;
             } else if (t.value == "this") {
                 auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
+                skip_token_if_type(lexer::TokenType::Semicolon);
+                return s;
+            } else if (t.value == "throw") {
+                next_token();
+                auto s = std::make_shared<ast::ThrowStatement>(parse_expression(nullptr));
+                skip_token_if_type(lexer::TokenType::Semicolon);
+                return s;
+            } else if (t.value == "try") {
+                next_token();
+                auto try_body = parse_statement();
+
+                auto catch_token = expect_next_token(lexer::TokenType::Keyword);
+                assert(catch_token.value == "catch");
+
+                expect_next_token(lexer::TokenType::LeftParen);
+                auto catch_identifier = expect_next_token(lexer::TokenType::Identifier);
+                expect_next_token(lexer::TokenType::RightParen);
+
+                next_token();
+                auto catch_body = parse_statement();
+
+                auto s = std::make_shared<ast::TryCatchStatement>(try_body, catch_identifier.value, catch_body);
                 skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             }

@@ -280,6 +280,16 @@ ReturnStatement* Statement::as_return() {
     return as<ReturnStatement>();
 }
 
+ThrowStatement* Statement::as_throw() {
+    assert(type == StatementType::Throw);
+    return as<ThrowStatement>();
+}
+
+TryCatchStatement* Statement::as_trycatch() {
+    assert(type == StatementType::TryCatch);
+    return as<TryCatchStatement>();
+}
+
 nlohmann::json ExpressionStatement::to_json() {
     nlohmann::json j;
     j["type"] = "ExpressionStatement";
@@ -348,6 +358,22 @@ nlohmann::json WhileStatement::to_json() {
     j["type"] = "WhileStatement";
     j["test"] = test->to_json();
     j["body"] = body->to_json();
+    return j;
+}
+
+nlohmann::json ThrowStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "ThrowStatement";
+    j["argument"] = argument->to_json();
+    return j;
+}
+
+nlohmann::json TryCatchStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "TryCatchStatement";
+    j["try_body"] = try_body->to_json();
+    j["catch_body"] = catch_body->to_json();
+    j["catch_identifier"] = catch_identifier;
     return j;
 }
 

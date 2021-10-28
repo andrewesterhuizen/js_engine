@@ -80,8 +80,9 @@ VariableType get_variable_type(std::string type);
     MAP(FunctionDeclaration) \
     MAP(While) \
     MAP(For) \
-    MAP(Return)
-
+    MAP(Return) \
+    MAP(Throw) \
+    MAP(TryCatch)
 
 enum class ExpressionType {
     EXPRESSIONS(CREATE_ENUM)
@@ -115,6 +116,8 @@ struct Statement {
     WhileStatement* as_while();
     ForStatement* as_for();
     ReturnStatement* as_return();
+    ThrowStatement* as_throw();
+    TryCatchStatement* as_trycatch();
 };
 
 struct Expression {
@@ -201,6 +204,27 @@ struct WhileStatement : public Statement {
             : Statement(StatementType::While), test(test), body(body) {}
     std::shared_ptr<Expression> test;
     std::shared_ptr<Statement> body;
+    nlohmann::json to_json() override;
+};
+
+struct ThrowStatement : public Statement {
+    ThrowStatement(std::shared_ptr<Expression> argument)
+            : Statement(StatementType::Throw), argument(argument) {}
+    std::shared_ptr<Expression> argument;
+    nlohmann::json to_json() override;
+};
+
+struct TryCatchStatement : public Statement {
+    TryCatchStatement(std::shared_ptr<Statement> try_body, std::string catch_identifier,
+                      std::shared_ptr<Statement> catch_body)
+            :
+            Statement(StatementType::TryCatch),
+            try_body(try_body),
+            catch_identifier(catch_identifier),
+            catch_body(catch_body) {}
+    std::shared_ptr<Statement> try_body;
+    std::string catch_identifier;
+    std::shared_ptr<Statement> catch_body;
     nlohmann::json to_json() override;
 };
 
