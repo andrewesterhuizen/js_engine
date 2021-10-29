@@ -102,10 +102,23 @@ STATEMENTS(FORWARD_DECLARE_STATEMENT)
 EXPRESSIONS(FORWARD_DECLARE_EXPRESSION)
 #undef FORWARD_DECLARE_EXPRESSION
 
-struct Statement {
-    Statement(StatementType type) : type(type) {}
-    StatementType type;
+enum class ASTNodeType {
+    Statement,
+    Expression
+};
+
+struct Statement;
+struct Expression;
+
+struct ASTNode {
+    ASTNodeType type;
+    ASTNode(ASTNodeType type) : type(type) {};
     virtual nlohmann::json to_json() = 0;
+};
+
+struct Statement : ASTNode {
+    Statement(StatementType type) : ASTNode(ASTNodeType::Statement), type(type) {}
+    StatementType type;
 
     template<typename T>
     T* as();
@@ -120,10 +133,9 @@ struct Statement {
     TryCatchStatement* as_trycatch();
 };
 
-struct Expression {
-    Expression(ExpressionType type) : type(type) {}
+struct Expression : ASTNode {
+    Expression(ExpressionType type) : ASTNode(ASTNodeType::Expression), type(type) {}
     ExpressionType type;
-    virtual nlohmann::json to_json() = 0;
 
     template<typename T>
     T* as();
@@ -351,11 +363,12 @@ struct FunctionExpression : public Expression {
 };
 
 struct ArrowFunctionExpression : public Expression {
-    ArrowFunctionExpression(std::vector<std::string> parameters, std::shared_ptr<Statement> body)
-            : Expression(ExpressionType::ArrowFunction), parameters(parameters),
+    ArrowFunctionExpression(std::vector<std::string> parameters, std::shared_ptr<ASTNode> body)
+            : Expression(ExpressionType::ArrowFunction),
+              parameters(parameters),
               body(body) {}
     std::vector<std::string> parameters;
-    std::shared_ptr<Statement> body;
+    std::shared_ptr<ASTNode> body;
     nlohmann::json to_json() override;
 };
 

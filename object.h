@@ -27,7 +27,7 @@ struct Value {
     struct Function {
         std::optional<std::string> name;
         std::vector<std::string> parameters;
-        std::shared_ptr<ast::Statement> body;
+        std::shared_ptr<ast::ASTNode> body;
         bool is_builtin;
         std::function<Value*(Value*, std::vector<Value*>)> builtin_func;
     };

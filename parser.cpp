@@ -277,14 +277,17 @@ std::shared_ptr<ast::Expression> Parser::parse_arrow_function_expression() {
         auto identifier = expect_next_token(lexer::TokenType::Identifier);
         expect_next_token(lexer::TokenType::Arrow);
 
+        std::vector<std::string> parameters{identifier.value};
+
         next_token();
         auto body = parse_statement();
-
-        auto parameters = std::vector<std::string>{identifier.value};
+        if (body->type == ast::StatementType::Expression) {
+            auto body_expression = body->as_expression_statement()->expression;
+            return std::make_shared<ast::ArrowFunctionExpression>(parameters, body_expression);
+        }
 
         return std::make_shared<ast::ArrowFunctionExpression>(parameters, body);
     }
-
 
     expect_next_token(lexer::TokenType::LeftParen);
 
@@ -307,6 +310,10 @@ std::shared_ptr<ast::Expression> Parser::parse_arrow_function_expression() {
 
     next_token();
     auto body = parse_statement();
+    if (body->type == ast::StatementType::Expression) {
+        auto body_expression = body->as_expression_statement()->expression;
+        return std::make_shared<ast::ArrowFunctionExpression>(parameters, body_expression);
+    }
 
     return std::make_shared<ast::ArrowFunctionExpression>(parameters, body);
 }

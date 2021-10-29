@@ -534,10 +534,14 @@ Interpreter::call_function(object::Value* context, object::Value* func_value, st
 
     auto return_value = om.new_undefined();
 
-    try {
-        execute(func->body);
-    } catch (Return ret) {
-        return_value = ret.value;
+    if (func->body->type == ast::ASTNodeType::Statement) {
+        try {
+            execute(std::static_pointer_cast<ast::Statement>(func->body));
+        } catch (Return ret) {
+            return_value = ret.value;
+        }
+    } else {
+        return_value = execute(std::static_pointer_cast<ast::Expression>(func->body));
     }
 
     om.pop_scope();

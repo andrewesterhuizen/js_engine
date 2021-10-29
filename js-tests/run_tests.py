@@ -25,6 +25,9 @@ def is_test_file(file_name):
 def run_test_file(file_name):
     arg = f"--files={test_dir}/assert.js,{test_dir}/{file_name}"
     result = subprocess.run([cli_path, arg], capture_output=True)
+    if result.stderr:
+        sys.exit(f"failed with error: {result.stderr}")
+
     test_result = json.loads(result.stdout)
     return test_result
 
