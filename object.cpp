@@ -143,6 +143,10 @@ std::optional<Value*> Value::get_property(ObjectManager &object_manager, std::st
 std::optional<Value*> Value::get_property(ObjectManager &object_manager, int index) {
     if (type == Type::Array) {
         auto a = array();
+        if(index >= array()->elements.size()) {
+            return object_manager.new_undefined();
+        }
+
         return a->elements.at(index);
     }
 

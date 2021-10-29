@@ -536,8 +536,17 @@ Interpreter::call_function(object::Value* context, object::Value* func_value, st
         return func->builtin_func(context, args);
     }
 
+    // construct "arguments" object
     om.push_scope(context);
+    auto arguments_object = om.new_array();
 
+    for (auto arg: args) {
+        arguments_object->array()->elements.push_back(arg);
+    }
+
+    set_variable("arguments", arguments_object);
+
+    // assign arguments to function parameters
     for (auto i = 0; i < func->parameters.size(); i++) {
         auto has_arg = i < args.size();
         auto value = has_arg ? args[i] : om.new_undefined();
