@@ -443,7 +443,10 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
         case lexer::TokenType::DivisionAssignment:
             return parse_expression(parse_assignment_expression(left));
         default:
-            assert(ast::token_type_is_operator(next.type));
+            if (!ast::token_type_is_operator(next.type)) {
+                unexpected_token();
+                assert(false);
+            }
             return parse_expression(parse_binary_expression(left));
     }
 }
