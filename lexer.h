@@ -108,6 +108,7 @@ class Lexer {
                                        "import|"
                                        "in|"
                                        "instanceof|"
+                                       "let|"
                                        "new|"
                                        "return|"
                                        "super|"
