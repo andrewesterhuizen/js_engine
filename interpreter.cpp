@@ -409,7 +409,11 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 }
                 case object::Value::Type::String: {
                     if (e->op == ast::Operator::Plus) {
-                        return om.new_string(left_result->string() + right_result->string());
+                        if (right_result->type == object::Value::Type::String) {
+                            return om.new_string(left_result->string() + right_result->string());
+                        }
+
+                        return om.new_string(left_result->string() + right_result->to_string());
                     }
                     // intentionally fall through here
                 }
@@ -604,7 +608,7 @@ void Interpreter::create_builtin_objects() {
         std::string out;
 
         for (auto arg: args) {
-            out += arg->to_string() + " ";
+            out += arg->to_json().dump(4) + " ";
         }
 
         std::cout << out << "\n";

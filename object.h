@@ -75,6 +75,9 @@ struct Value {
                 nlohmann::json j;
 
                 for (auto p: properties) {
+                    if(p.first == "__proto__") {
+                        continue;
+                    }
                     j[p.first] = p.second->to_json();
                 }
 

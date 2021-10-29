@@ -138,6 +138,11 @@ std::vector<Token> Lexer::get_tokens(std::string src) {
     source = src;
     index = 0;
 
+    if (src.size() == 0) {
+        emit_token(TokenType::EndOfFile, "\0");
+        return tokens;
+    }
+
     while (index < source.length()) {
         get_token();
     }

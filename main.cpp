@@ -35,10 +35,6 @@ int main(int argc, char* argv[]) {
     auto files_arg = argv[1];
     std::set<std::string> args(argv + 1, argv + argc);
 
-    for (auto arg: args) {
-        std::cout << arg << "\n";
-    }
-
     auto output_tokens = args.find("--output-tokens") != args.end();
     auto output_ast = args.find("--output-ast") != args.end();
 
