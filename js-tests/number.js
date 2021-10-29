@@ -1,4 +1,9 @@
 section("number", (test) => {
+  test("hex literal returns number", () => {
+    assert(0x1 == 1, "expected result to be true");
+    assert(0xff == 255, "expected result to be true");
+  });
+
   test("== operation returns expected result", () => {
     assert(123 == 123, "expected result to be true");
   });

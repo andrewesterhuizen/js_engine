@@ -131,6 +131,7 @@ class Lexer {
             {"^(_|\\$|[a-zA-Z])\\w*", TokenType::Identifier},
             {"^\"[^\"]*\"",           TokenType::String},
             {"^'[^']*'",              TokenType::String},
+            {"^0[xX][0-9a-fA-F]+",    TokenType::Number},
             {"^\\d[.\\d+]*",          TokenType::Number},
             {"^=>",                   TokenType::Arrow},
             {"^===",                  TokenType::EqualToStrict},
