@@ -25,6 +25,7 @@ struct Value {
     using native_function_handler = std::function<Value*(Value*, std::vector<Value*>)>;
 
     struct Function {
+        std::optional<std::string> name;
         std::vector<std::string> parameters;
         std::shared_ptr<ast::Statement> body;
         bool is_builtin;
@@ -45,7 +46,6 @@ struct Value {
     };
 
     std::unordered_map<std::string, Value*> properties;
-    std::optional<std::string> prototype;
     Type type;
     std::variant<double, std::string, bool, std::vector<Value*>, std::unordered_map<std::string, Value*>, Function, Array> value;
 
@@ -115,13 +115,29 @@ struct Value {
     std::string to_string() {
         switch (type) {
             case Type::Object: {
-                nlohmann::json j;
-
-                for (auto p: properties) {
-                    j[p.first] = p.second->to_json();
+                auto out = to_json().dump(4);
+                auto prototype_entry = properties.find("__proto__");
+                if (prototype_entry == properties.end()) {
+                    return out;
                 }
 
-                return j.dump(4);
+                out = "[object ";
+
+                auto prototype = prototype_entry->second;
+                auto constructor = prototype->properties.find("constructor");
+                if (constructor != prototype->properties.end()) {
+                    assert(constructor->second->type == Type::Function);
+                    auto name = constructor->second->function()->name;
+                    if (name.has_value()) {
+                        out += name.value();
+                        out += "]";
+                        return out;
+                    }
+                }
+
+                out += "Object]";
+
+                return out;
             }
             case Type::Function:
             case Type::Array:
@@ -154,75 +170,27 @@ struct Value {
         return type == Type::Undefined;
     }
 
-    Value* get_property(ObjectManager &object_manager, std::string name);
-    Value* get_property(ObjectManager &object_manager, int index);
+    std::optional<Value*> get_property(ObjectManager &object_manager, std::string name);
+    std::optional<Value*> get_property(ObjectManager &object_manager, int index);
     Value* set_property(std::string name, Value* value);
     Value* set_property(int index, Value* value);
 
-    void register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler);
+    Value* register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler);
 };
 
 
 class ValueFactory {
     ValueFactory();
 public:
-    static Value* number(Value* value, double v) {
-        value->type = Value::Type::Number;
-        value->value = v;
-        value->prototype = "Number";
-        return value;
-    }
-
-    static Value* string(Value* value, std::string v) {
-        value->type = Value::Type::String;
-        value->value = v;
-        value->prototype = "String";
-        return value;
-    }
-
-    static Value* boolean(Value* value, bool v) {
-        value->type = Value::Type::Boolean;
-        value->value = v;
-        value->prototype = "Boolean";
-        return value;
-    }
-
-    static Value* array(Value* value) {
-        std::vector<Value*> v;
-        return array(value, v);
-    }
-
-    static Value* array(Value* value, std::vector<Value*> v) {
-        value->type = Value::Type::Array;
-        value->value = Value::Array{v};
-        value->prototype = "Array";
-        return value;
-    }
-
-    static Value* object(Value* value) {
-        std::unordered_map<std::string, Value*> v;
-        return object(value, v);
-    }
-
-    static Value* object(Value* value, std::unordered_map<std::string, Value*> v) {
-        value->type = Value::Type::Object;
-        value->value = v;
-        value->prototype = "Object";
-        return value;
-    }
-
-    static Value* function(Value* value) {
-        value->type = Value::Type::Function;
-        value->value = Value::Function{};
-        value->prototype = "Object";
-        return value;
-    }
-
-    static Value* undefined(Value* value) {
-        value->type = Value::Type::Undefined;
-        value->prototype = "Object";
-        return value;
-    }
+    static Value* number(ObjectManager &om, Value* value, double v);
+    static Value* string(ObjectManager &om, Value* value, std::string v);
+    static Value* boolean(ObjectManager &om, Value* value, bool v);
+    static Value* array(ObjectManager &om, Value* value);
+    static Value* array(ObjectManager &om, Value* value, std::vector<Value*> v);
+    static Value* object(ObjectManager &om, Value* value);
+    static Value* object(ObjectManager &om, Value* value, std::unordered_map<std::string, Value*> v);
+    static Value* function(ObjectManager &om, Value* value, std::optional<std::string> name);
+    static Value* undefined(ObjectManager &om, Value* value);
 };
 
 
@@ -238,7 +206,7 @@ class ObjectManager {
         std::unordered_set<Value*> values_in_scope;
         std::unordered_map<std::string, Value*> variables;
 
-        Value* get_variable(std::string name) {
+        std::optional<Value*> get_variable(std::string name) {
             if (is_global) {
                 return context->get_property(om, name);
             }
@@ -247,7 +215,7 @@ class ObjectManager {
                 return entry->second;
             }
 
-            return nullptr;
+            return {};
         }
 
         Value* set_variable(std::string name, Value* value) {
@@ -305,31 +273,33 @@ class ObjectManager {
 public:
     ObjectManager() {
         global = new_object();
-        global->prototype.reset();
         // push top level scope
         scopes.push_back(Scope{*this, global, true});
     }
 
     Value* new_object() {
-        return ValueFactory::object(allocate<Value>());
+        return ValueFactory::object(*this, allocate<Value>());
     }
     Value* new_function() {
-        return ValueFactory::function(allocate<Value>());
+        return ValueFactory::function(*this, allocate<Value>(), {});
+    }
+    Value* new_function(std::optional<std::string> name) {
+        return ValueFactory::function(*this, allocate<Value>(), name);
     }
     Value* new_array() {
-        return ValueFactory::array(allocate<Value>());
+        return ValueFactory::array(*this, allocate<Value>());
     }
     Value* new_number(double value) {
-        return ValueFactory::number(allocate<Value>(), value);
+        return ValueFactory::number(*this, allocate<Value>(), value);
     }
     Value* new_string(std::string value) {
-        return ValueFactory::string(allocate<Value>(), value);
+        return ValueFactory::string(*this, allocate<Value>(), value);
     }
     Value* new_boolean(bool value) {
-        return ValueFactory::boolean(allocate<Value>(), value);
+        return ValueFactory::boolean(*this, allocate<Value>(), value);
     }
     Value* new_undefined() {
-        return ValueFactory::undefined(allocate<Value>());
+        return ValueFactory::undefined(*this, allocate<Value>());
     }
 
     void push_scope(Value* context);
@@ -337,7 +307,7 @@ public:
     Scope* current_scope();
     Scope* global_scope();
     Value* global_object();
-    Value* get_variable(std::string name);
+    std::optional<object::Value*> get_variable(std::string name);
     Value* set_variable(std::string name, Value* value);
     Value* declare_variable(std::string name, Value* value);
 };

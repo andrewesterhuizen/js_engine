@@ -16,19 +16,19 @@ void ObjectManager::pop_scope() {
     current_scope_index--;
 }
 
-object::Value* ObjectManager::get_variable(std::string name) {
+std::optional<object::Value*> ObjectManager::get_variable(std::string name) {
     auto i = current_scope_index;
 
     while (i >= 0) {
-        auto value = scopes[i].get_variable(name);
-        if (value != nullptr) {
-            return value;
+        auto var = scopes[i].get_variable(name);
+        if (var.has_value()) {
+            return var.value();
         }
 
         i--;
     }
 
-    return nullptr;
+    return {};
 }
 
 object::Value* ObjectManager::declare_variable(std::string name, object::Value* value) {
@@ -110,15 +110,16 @@ Value* ObjectManager::global_object() {
     return global;
 }
 
-void Value::register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler) {
-    auto func_value = object_manager.new_function();
+Value* Value::register_native_method(ObjectManager &object_manager, std::string name, native_function_handler handler) {
+    auto func_value = object_manager.new_function(name);
     auto func = func_value->function();
     func->is_builtin = true;
     func->builtin_func = handler;
     properties[name] = func_value;
+    return func_value;
 }
 
-Value* Value::get_property(ObjectManager &object_manager, std::string name) {
+std::optional<Value*> Value::get_property(ObjectManager &object_manager, std::string name) {
     if (type == Type::Array) {
         // TODO: built in properties like this need to be generalised
         if (name == "length") {
@@ -131,19 +132,15 @@ Value* Value::get_property(ObjectManager &object_manager, std::string name) {
         return entry->second;
     }
 
-    if (!prototype.has_value()) {
-        return nullptr;
+    auto proto = properties.find("__proto__");
+    if (proto == properties.end()) {
+        return {};
     }
 
-    auto proto = object_manager.get_variable(prototype.value());
-    if (proto == nullptr) {
-        return nullptr;
-    }
-
-    return proto->get_property(object_manager, name);
+    return proto->second->get_property(object_manager, name);
 }
 
-Value* Value::get_property(ObjectManager &object_manager, int index) {
+std::optional<Value*> Value::get_property(ObjectManager &object_manager, int index) {
     if (type == Type::Array) {
         auto a = array();
         return a->elements.at(index);
@@ -173,5 +170,91 @@ Value* Value::set_property(int index, Value* value) {
     auto name = std::to_string(index);
     return set_property(name, value);
 }
+
+Value* ValueFactory::number(ObjectManager &om, Value* value, double v) {
+    value->type = Value::Type::Number;
+    value->value = v;
+    auto prototype = om.global_scope()->get_variable("Number");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+Value* ValueFactory::string(ObjectManager &om, Value* value, std::string v) {
+    value->type = Value::Type::String;
+    value->value = v;
+    auto prototype = om.global_scope()->get_variable("String");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+
+Value* ValueFactory::boolean(ObjectManager &om, Value* value, bool v) {
+    value->type = Value::Type::Boolean;
+    value->value = v;
+    auto prototype = om.global_scope()->get_variable("Boolean");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+
+Value* ValueFactory::array(ObjectManager &om, Value* value) {
+    std::vector<Value*> v;
+    return array(om, value, v);
+}
+
+Value* ValueFactory::array(ObjectManager &om, Value* value, std::vector<Value*> v) {
+    value->type = Value::Type::Array;
+    value->value = Value::Array{v};
+    auto prototype = om.global_scope()->get_variable("Array");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+
+Value* ValueFactory::object(ObjectManager &om, Value* value) {
+    std::unordered_map<std::string, Value*> v;
+    return object(om, value, v);
+}
+
+Value* ValueFactory::object(ObjectManager &om, Value* value, std::unordered_map<std::string, Value*> v) {
+    value->type = Value::Type::Object;
+    value->value = v;
+    auto g = om.global_scope();
+    if (g != nullptr) {
+        auto prototype = om.global_scope()->get_variable("Object");
+        if (prototype.has_value()) {
+            assert(prototype.has_value());
+            value->set_property("__proto__", prototype.value());
+        }
+    }
+    return value;
+}
+
+Value* ValueFactory::function(ObjectManager &om, Value* value, std::optional<std::string> name) {
+    value->type = Value::Type::Function;
+    auto func = Value::Function{};
+    func.name = name;
+    value->value = func;
+
+    auto prototype = om.new_object();
+    prototype->set_property("constructor", value);
+    value->set_property("prototype", prototype);
+
+    // not sure if this one is correct
+    auto proto = om.global_scope()->get_variable("Object");
+    assert(proto.has_value());
+    value->set_property("__proto__", proto.value());
+
+    return value;
+}
+
+Value* ValueFactory::undefined(ObjectManager &om, Value* value) {
+    value->type = Value::Type::Undefined;
+    auto prototype = om.global_scope()->get_variable("Object");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+
 
 }

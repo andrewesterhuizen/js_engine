@@ -73,7 +73,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
         case ast::StatementType::FunctionDeclaration: {
             auto s = statement->as_function_declaration();
 
-            auto func_value = om.new_function();
+            auto func_value = om.new_function(s->identifier);
             auto func = func_value->function();
             func->is_builtin = false;
             func->parameters = s->parameters;
@@ -104,8 +104,9 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
 
             auto instance = om.new_object();
 
-            // TODO: this should point to the constructor functions prototype when we have a better prototype implementation
-            instance->set_property("__proto__", om.new_undefined());
+            auto prototype = constructor->get_property(om, "prototype");
+            assert(prototype.has_value());
+            instance->set_property("__proto__", prototype.value());
 
             std::vector<object::Value*> args;
             for (auto arg: e->arguments) {
@@ -163,7 +164,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
             auto obj = execute(e->object);
 
             if (e->is_computed) {
-                object::Value* property;
+                std::optional<object::Value*> property;
                 auto right = execute(e->property);
 
                 if (right->type == object::Value::Type::Number) {
@@ -173,8 +174,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                     property = obj->get_property(om, right->string());
                 }
 
-                if (property != nullptr) {
-                    return property;
+                if (property.has_value()) {
+                    return property.value();
                 }
 
                 return om.new_undefined();
@@ -183,8 +184,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
 
                 auto property = obj->get_property(om, right->name);
 
-                if (property != nullptr) {
-                    return property;
+                if (property.has_value()) {
+                    return property.value();
                 }
 
                 return om.new_undefined();
@@ -408,7 +409,12 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
 
                     assert(false);
                 }
-                case object::Value::Type::String:
+                case object::Value::Type::String: {
+                    if (e->op == ast::Operator::Plus) {
+                        return om.new_string(left_result->string() + right_result->string());
+                    }
+                    // intentionally fall through here
+                }
                 case object::Value::Type::Object:
                 case object::Value::Type::Array:
                 case object::Value::Type::Function:
@@ -527,8 +533,15 @@ Interpreter::call_function(object::Value* context, object::Value* func_value, st
     return return_value;
 }
 
-void Interpreter::throw_error(std::string type, std::string message) {
-    throw Error{type, message};
+void Interpreter::throw_error(std::string error_type, std::string message) {
+    auto error_constructor_value = get_variable(error_type);
+    auto error_instance = call_function(om.new_object(), error_constructor_value, {om.new_string(message)});
+
+    auto prototype = error_constructor_value->get_property(om, "prototype");
+    assert(prototype.has_value());
+    error_instance->set_property("__proto__", prototype.value());
+
+    throw error_instance;
 }
 
 void Interpreter::run(ast::Program &program) {
@@ -537,25 +550,22 @@ void Interpreter::run(ast::Program &program) {
             execute(s);
         }
     }
-    catch (Error error) {
-        // TODO: Error should be a Value*
-        std::cerr << error.type << ": " << error.message;
-        return;
-    }
     catch (object::Value* error) {
-        std::cerr << error->to_string() << "\n";
+        auto error_to_string = error->get_property(om, "toString");
+        auto string_value = call_function(error, error_to_string.value(), {});
+        std::cerr << string_value->string() << "\n";
         return;
     }
 }
 
 object::Value* Interpreter::get_variable(std::string name) {
     auto v = om.get_variable(name);
-    if (v == nullptr) {
+    if (!v.has_value()) {
         throw_error("ReferenceError", name + " is not defined\n");
         assert(false);
     }
 
-    return v;
+    return v.value();
 }
 
 object::Value* Interpreter::declare_variable(std::string name, object::Value* value) {
@@ -567,6 +577,21 @@ object::Value* Interpreter::set_variable(std::string name, object::Value* value)
 }
 
 void Interpreter::create_builtin_objects() {
+    auto global = om.global_object();
+
+    // Built in prototypes
+    auto object_prototype = om.new_object();
+    auto proto = new object::Value{};
+    proto->type = object::Value::Type::Undefined;
+    object_prototype->set_property("__proto__", proto);
+    global->set_property("Object", object_prototype);
+    global->set_property("String", om.new_object());
+    global->set_property("Number", om.new_object());
+    global->set_property("Boolean", om.new_object());
+    object_prototype->register_native_method(om, "toString", [&](object::Value* value, std::vector<object::Value*>) {
+        return om.new_string(value->to_string());
+    });
+
     // console
     auto console = om.new_object();
     om.global_object()->set_property("console", console);
@@ -607,7 +632,9 @@ void Interpreter::create_builtin_objects() {
             array->elements.push_back(arg);
         }
 
-        return context->get_property(om, "length");
+        auto length = context->get_property(om, "length");
+        assert(length.has_value());
+        return length.value();
     });
 
     Array->register_native_method(om, "pop", [&](object::Value* context, std::vector<object::Value*> args) {
@@ -682,6 +709,41 @@ void Interpreter::create_builtin_objects() {
 
         return prev;
     });
+
+    // Error
+    auto error_constructor_handler = [&](object::Value* context, std::vector<object::Value*> args) {
+        auto message = args.size() > 0 ? args[0] : om.new_undefined();
+        context->set_property("message", message);
+        context->set_property("name", om.new_string("Error"));
+        return context;
+    };
+
+    auto error_constructor = global->register_native_method(om, "Error", error_constructor_handler);
+    auto error_constructor_prototype = error_constructor->get_property(om, "prototype");
+    assert(error_constructor_prototype.has_value());
+
+    auto error_constructor_to_string_handler = [&](object::Value* context, std::vector<object::Value*>) {
+        auto name = context->get_property(om, "name");
+        assert(name.has_value());
+        auto message = context->get_property(om, "message");
+        assert(message.has_value());
+        if (message.value()->is_undefined()) {
+            return om.new_string(name.value()->string() + ": undefined\n");
+        }
+
+        return om.new_string(name.value()->string() + ": " + message.value()->string());
+    };
+    error_constructor_prototype.value()->register_native_method(om, "toString", error_constructor_to_string_handler);
+
+    auto reference_error_constructor_handler = [&](object::Value* context, std::vector<object::Value*> args) {
+        context->set_property("message", args[0]);
+        context->set_property("name", om.new_string("ReferenceError"));
+        return context;
+    };
+
+    auto reference_error_constructor = global->register_native_method(om, "ReferenceError",
+                                                                      reference_error_constructor_handler);
+    reference_error_constructor->set_property("prototype", error_constructor_prototype.value());
 }
 
 Interpreter::Interpreter() {

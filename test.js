@@ -1,28 +1,36 @@
-function throws_error() {
-    throw "error throw in function";
+function MyClass() {}
+var instance = new MyClass();
+console.log(instance.toString());
+console.log(({}));
+console.log(({}).toString());
+
+function MessageLogger(message) {
+    this.message = message;
 }
 
-function start() {
-    try {
-        throws_error();
-    } catch(fn_error) {
-        console.log("error caught in function:");
-        console.log(fn_error);
-        console.log("rethrowing");
-        throw fn_error;
-    }
-}
+MessageLogger.prototype.log = function() {
+    return console.log(this.message);
+};
+
+MessageLogger.prototype.toString = function() {
+    return this.message;
+};
+
+MessageLogger.prototype.toString = function() {
+    return "MessageLogger with message: " + this.message;
+};
+
+
+
+const logger = new MessageLogger("my message");
+logger.log();
+console.log(logger.toString());
+
 
 try {
-    console.log("hello from inside top level try block");
-    start();
+asdf.y = 1;
 } catch(error) {
-    console.log("error caught in top level catch:" );
-    console.log(error);
+    console.log(error.name == "ReferenceError");
 }
-
-
-
-
-console.log("end");
+throw new Error("my error message");
 

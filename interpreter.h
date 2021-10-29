@@ -8,11 +8,6 @@
 
 namespace interpreter {
 
-struct Error {
-    std::string type;
-    std::string message;
-};
-
 class Interpreter {
     object::ObjectManager om;
 
