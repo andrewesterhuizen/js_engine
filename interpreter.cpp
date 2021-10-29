@@ -600,6 +600,37 @@ void Interpreter::create_builtin_objects() {
         return om.new_string(value->to_string());
     });
 
+    // built in functions
+    global->register_native_method(om, "parseInt", [&](object::Value*, std::vector<object::Value*> args) {
+        auto num_arg = args[0];
+
+        std::string input;
+        if (num_arg->type != object::Value::Type::String) {
+            input = num_arg->to_string();
+        } else {
+            input = num_arg->string();
+        }
+
+        auto radix = 10;
+        if (args.size() > 1) {
+            radix = args[1]->number();
+        }
+        auto result = std::stoi(input, nullptr, radix);
+        return om.new_number(result);
+    });
+
+    global->register_native_method(om, "parseFloat", [&](object::Value*, std::vector<object::Value*> args) {
+        auto num_arg = args[0];
+        std::string input;
+        if (num_arg->type != object::Value::Type::String) {
+            input = num_arg->to_string();
+        } else {
+            input = num_arg->string();
+        }
+
+        return om.new_number(std::stof(input));
+    });
+
     // console
     auto console = om.new_object();
     om.global_object()->set_property("console", console);
