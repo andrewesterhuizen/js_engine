@@ -56,6 +56,10 @@ std::string operator_to_string(Operator op) {
             return "!";
         case Operator::Typeof:
             return "typeof";
+        case Operator::BitwiseAnd:
+            return "&";
+        case Operator::BitwiseOr:
+            return "|";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -110,6 +114,10 @@ Operator token_type_to_operator(lexer::TokenType token_type) {
             return Operator::Decrement;
         case lexer::TokenType::Exponentiation:
             return Operator::Exponentiation;
+        case lexer::TokenType::Pipe:
+            return Operator::BitwiseOr;
+        case lexer::TokenType::Ampersand:
+            return Operator::BitwiseAnd;
         default:
             std::cerr << "missing case for TokenType in token_type_to_operator";
             assert(false);
@@ -137,6 +145,8 @@ bool token_type_is_operator(lexer::TokenType token_type) {
         case lexer::TokenType::Decrement:
         case lexer::TokenType::Exponentiation:
         case lexer::TokenType::NotEqualToStrict:
+        case lexer::TokenType::Pipe:
+        case lexer::TokenType::Ampersand:
             return true;
         default:
             return false;

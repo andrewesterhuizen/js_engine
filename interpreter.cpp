@@ -407,6 +407,16 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                             assert(right_result->type == object::Value::Type::Number);
                             return om.new_boolean(left_result->number() <= right_result->number());
                         }
+                        case ast::Operator::BitwiseAnd: {
+                            auto left_int = static_cast<int>(left_result->number());
+                            auto right_int = static_cast<int>(right_result->number());
+                            return om.new_number(left_int & right_int);
+                        }
+                        case ast::Operator::BitwiseOr: {
+                            auto left_int = static_cast<int>(left_result->number());
+                            auto right_int = static_cast<int>(right_result->number());
+                            return om.new_number(left_int | right_int);
+                        }
                         case ast::Operator::Equals:
                         case ast::Operator::AdditionAssignment:
                         case ast::Operator::SubtractionAssignment:
@@ -475,6 +485,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                             }
 
                             return om.new_string(left_result->to_string() + right_result->to_string());
+                        case ast::Operator::BitwiseAnd:
+                        case ast::Operator::BitwiseOr:
                         case ast::Operator::Minus:
                         case ast::Operator::Multiply:
                         case ast::Operator::Divide:

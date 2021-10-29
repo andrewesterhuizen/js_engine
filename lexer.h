@@ -51,8 +51,9 @@ namespace lexer {
     MAP(Dot) \
     MAP(QuestionMark) \
     MAP(Arrow) \
-    MAP(NewLine)
-
+    MAP(NewLine) \
+    MAP(Pipe) \
+    MAP(Ampersand)
 
 #define CREATE_ENUM(NAME) NAME,
 
@@ -142,7 +143,9 @@ class Lexer {
             {"^<=",                   TokenType::LessThanOrEqualTo},
             {"^<",                    TokenType::LessThan},
             {"^&&",                   TokenType::And},
+            {"^&",                    TokenType::Ampersand},
             {"^\\|\\|",               TokenType::Or},
+            {"^\\|",                  TokenType::Pipe},
             {"^!==",                  TokenType::NotEqualToStrict},
             {"^!=",                   TokenType::NotEqualTo},
             {"^!",                    TokenType::Not},

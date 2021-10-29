@@ -32,9 +32,11 @@ namespace ast {
     MAP(GreaterThan) \
     MAP(GreaterThanOrEqualTo) \
     MAP(LessThan) \
-    MAP(LessThanOrEqualTo)  \
-    MAP(Not)           \
-    MAP(Typeof)
+    MAP(LessThanOrEqualTo) \
+    MAP(Not) \
+    MAP(Typeof) \
+    MAP(BitwiseAnd) \
+    MAP(BitwiseOr)
 
 #define CREATE_ENUM(NAME) NAME,
 
