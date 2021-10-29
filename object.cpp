@@ -197,17 +197,25 @@ Value* ValueFactory::boolean(ObjectManager &om, Value* value, bool v) {
     return value;
 }
 
-Value* ValueFactory::array(ObjectManager &om, Value* value) {
-    std::vector<Value*> v;
-    return array(om, value, v);
+Value* ValueFactory::array(ObjectManager &om, Value* value, std::optional<int> length) {
+    return array(om, value, {}, length);
 }
 
-Value* ValueFactory::array(ObjectManager &om, Value* value, std::vector<Value*> v) {
+Value* ValueFactory::array(ObjectManager &om, Value* value, std::vector<Value*> v, std::optional<int> length) {
     value->type = Value::Type::Array;
     value->value = Value::Array{v};
     auto prototype = om.global_scope()->get_variable("Array");
     assert(prototype.has_value());
     value->set_property("__proto__", prototype.value());
+
+    // this is a bit of a hack for now, arrays should support "holes",
+    // so we don't need to allocate values for items that don't exist
+    if(length.has_value()) {
+        for(auto i = 0; i < length; i++) {
+            value->array()->elements.push_back(om.new_undefined());
+        }
+    }
+
     return value;
 }
 

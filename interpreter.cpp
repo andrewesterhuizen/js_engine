@@ -332,6 +332,10 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 case object::Value::Type::Number: {
                     switch (e->op) {
                         case ast::Operator::Plus: {
+                            if(right_result->type == object::Value::Type::String) {
+                                return om.new_string(left_result->to_string() + right_result->string());
+                            }
+
                             assert(right_result->type == object::Value::Type::Number);
                             return om.new_number(left_result->number() + right_result->number());
                         }
@@ -661,8 +665,29 @@ void Interpreter::create_builtin_objects() {
     });
 
     // Array
-    auto Array = om.new_object();
-    om.global_object()->set_property("Array", Array);
+    auto array_constructor_handler = [&](object::Value* context, std::vector<object::Value*> args) {
+        if (args.size() == 0) {
+            return om.new_array();
+        }
+
+        auto length = args[0]->number();
+        return om.new_array(length);
+    };
+    auto Array = global->register_native_method(om, "Array", array_constructor_handler);
+
+    Array->register_native_method(om, "fill", [&](object::Value* context, std::vector<object::Value*> args) {
+        auto value = om.new_undefined();
+        if (args.size() > 0) {
+            value = args[0];
+        }
+
+        auto array = context->array();
+        for (auto &el: array->elements) {
+            el = value;
+        }
+
+        return context;
+    });
 
     Array->register_native_method(om, "push", [&](object::Value* context, std::vector<object::Value*> args) {
         auto array = context->array();

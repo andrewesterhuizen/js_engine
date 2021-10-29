@@ -75,7 +75,7 @@ struct Value {
                 nlohmann::json j;
 
                 for (auto p: properties) {
-                    if(p.first == "__proto__") {
+                    if (p.first == "__proto__") {
                         continue;
                     }
                     j[p.first] = p.second->to_json();
@@ -188,8 +188,8 @@ public:
     static Value* number(ObjectManager &om, Value* value, double v);
     static Value* string(ObjectManager &om, Value* value, std::string v);
     static Value* boolean(ObjectManager &om, Value* value, bool v);
-    static Value* array(ObjectManager &om, Value* value);
-    static Value* array(ObjectManager &om, Value* value, std::vector<Value*> v);
+    static Value* array(ObjectManager &om, Value* value, std::optional<int> length);
+    static Value* array(ObjectManager &om, Value* value, std::vector<Value*> v, std::optional<int> length);
     static Value* object(ObjectManager &om, Value* value);
     static Value* object(ObjectManager &om, Value* value, std::unordered_map<std::string, Value*> v);
     static Value* function(ObjectManager &om, Value* value, std::optional<std::string> name);
@@ -290,7 +290,10 @@ public:
         return ValueFactory::function(*this, allocate<Value>(), name);
     }
     Value* new_array() {
-        return ValueFactory::array(*this, allocate<Value>());
+        return ValueFactory::array(*this, allocate<Value>(), {});
+    }
+    Value* new_array(int length) {
+        return ValueFactory::array(*this, allocate<Value>(), length);
     }
     Value* new_number(double value) {
         return ValueFactory::number(*this, allocate<Value>(), value);
