@@ -33,8 +33,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
             auto test = execute(s->test);
             if (test->is_truthy()) {
                 return execute(s->consequent);
-            } else if (s->alternative != nullptr) {
-                return execute(s->alternative);
+            } else if (s->alternative.has_value()) {
+                return execute(s->alternative.value());
             }
 
             return om.new_undefined();
@@ -80,11 +80,11 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
         case ast::StatementType::Return: {
             auto s = statement->as_return();
 
-            if (s->argument == nullptr) {
+            if (!s->argument.has_value()) {
                 throw Return{om.new_undefined()};
             }
 
-            auto value = execute(s->argument);
+            auto value = execute(s->argument.value());
             throw Return{value};
         }
     }
@@ -193,7 +193,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
         }
         case ast::ExpressionType::VariableDeclaration: {
             auto e = expression->as_variable_declaration();
-            object::Value* value = e->value != nullptr ? execute(e->value) : om.new_undefined();
+            object::Value* value = e->value.has_value() ? execute(e->value.value()) : om.new_undefined();
             for (auto id: e->identifiers) {
                 declare_variable(id, value);
             }

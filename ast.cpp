@@ -315,8 +315,8 @@ nlohmann::json IfStatement::to_json() {
     j["type"] = "IfStatement";
     j["test"] = test->to_json();
     j["consequent"] = consequent->to_json();
-    if (alternative != nullptr) {
-        j["alternative"] = alternative->to_json();
+    if (alternative.has_value()) {
+        j["alternative"] = alternative.value()->to_json();
     } else {
         j["alternative"] = nullptr;
     }
@@ -336,8 +336,8 @@ nlohmann::json ForStatement::to_json() {
 nlohmann::json ReturnStatement::to_json() {
     nlohmann::json j;
     j["type"] = "ReturnStatement";
-    if (argument != nullptr) {
-        j["argument"] = argument->to_json();
+    if (argument.has_value()) {
+        j["argument"] = argument.value()->to_json();
     } else {
         j["argument"] = nullptr;
     }
@@ -468,7 +468,11 @@ nlohmann::json VariableDeclarationExpression::to_json() {
     nlohmann::json j;
     j["type"] = "VariableDeclarationExpression";
     j["identifiers"] = identifiers;
-    j["value"] = value->to_json();
+    if (value.has_value()) {
+        j["value"] = value.value()->to_json();
+    } else {
+        j["value"] = nullptr;
+    }
     return j;
 }
 

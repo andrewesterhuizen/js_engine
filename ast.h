@@ -161,12 +161,13 @@ struct BlockStatement : public Statement {
 };
 
 struct IfStatement : public Statement {
-    IfStatement(std::shared_ptr<Expression> test, std::shared_ptr<Statement> consequent,
-                std::shared_ptr<Statement> alternative)
+    IfStatement(std::shared_ptr<Expression> test,
+                std::shared_ptr<Statement> consequent,
+                std::optional<std::shared_ptr<ast::Statement>> alternative)
             : Statement(StatementType::If), test(test), consequent(consequent), alternative(alternative) {}
     std::shared_ptr<Expression> test;
     std::shared_ptr<Statement> consequent;
-    std::shared_ptr<Statement> alternative;
+    std::optional<std::shared_ptr<ast::Statement>> alternative;
     nlohmann::json to_json() override;
 };
 
@@ -182,9 +183,10 @@ struct ForStatement : public Statement {
 };
 
 struct ReturnStatement : public Statement {
-    ReturnStatement() : Statement(StatementType::Return), argument(nullptr) {}
-    ReturnStatement(std::shared_ptr<Expression> argument) : Statement(StatementType::Return), argument(argument) {}
-    std::shared_ptr<Expression> argument;
+    ReturnStatement() : Statement(StatementType::Return), argument({}) {}
+    ReturnStatement(std::optional<std::shared_ptr<Expression>> argument) :
+            Statement(StatementType::Return), argument(argument) {}
+    std::optional<std::shared_ptr<Expression>> argument;
     nlohmann::json to_json() override;
 };
 
@@ -237,11 +239,12 @@ struct CallExpression : public Expression {
 };
 
 struct VariableDeclarationExpression : public Expression {
-    VariableDeclarationExpression(std::vector<std::string> identifiers, std::shared_ptr<Expression> value,
+    VariableDeclarationExpression(std::vector<std::string> identifiers,
+                                  std::optional<std::shared_ptr<Expression>> value,
                                   VariableType type)
             : Expression(ExpressionType::VariableDeclaration), identifiers(identifiers), value(value), type(type) {}
     std::vector<std::string> identifiers;
-    std::shared_ptr<Expression> value;
+    std::optional<std::shared_ptr<Expression>> value;
     VariableType type;
     nlohmann::json to_json() override;
 };

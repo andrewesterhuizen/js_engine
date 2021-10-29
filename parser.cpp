@@ -173,9 +173,10 @@ std::shared_ptr<ast::Expression> Parser::parse_variable_declaration_expression()
 
     std::vector<std::string> identifiers;
     identifiers.push_back(expect_next_token(lexer::TokenType::Identifier).value);
+    std::optional<std::shared_ptr<ast::Expression>> value;
 
     if (peek_next_token().type == lexer::TokenType::Semicolon) {
-        return std::make_shared<ast::VariableDeclarationExpression>(identifiers, nullptr, type);
+        return std::make_shared<ast::VariableDeclarationExpression>(identifiers, value, type);
     }
 
     next = next_token();
@@ -191,7 +192,7 @@ std::shared_ptr<ast::Expression> Parser::parse_variable_declaration_expression()
     assert(next.type == lexer::TokenType::Equals);
 
     next_token();
-    auto value = parse_expression(nullptr);
+    value = parse_expression(nullptr);
 
     return std::make_shared<ast::VariableDeclarationExpression>(identifiers, value, type);
 }
@@ -461,7 +462,7 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             } else if (t.value == "if") {
-                std::shared_ptr<ast::Statement> alternative = nullptr;
+                std::optional<std::shared_ptr<ast::Statement>> alternative;
 
                 expect_next_token(lexer::TokenType::LeftParen);
 
