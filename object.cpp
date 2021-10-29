@@ -201,6 +201,14 @@ Value* ValueFactory::boolean(ObjectManager &om, Value* value, bool v) {
     return value;
 }
 
+Value* ValueFactory::null(ObjectManager &om, Value* value) {
+    value->type = Value::Type::Null;
+    auto prototype = om.global_scope()->get_variable("Object");
+    assert(prototype.has_value());
+    value->set_property("__proto__", prototype.value());
+    return value;
+}
+
 Value* ValueFactory::array(ObjectManager &om, Value* value, std::optional<int> length) {
     return array(om, value, {}, length);
 }

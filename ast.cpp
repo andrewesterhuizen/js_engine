@@ -54,6 +54,8 @@ std::string operator_to_string(Operator op) {
             return "!==";
         case Operator::Not:
             return "!";
+        case Operator::Typeof:
+            return "typeof";
     }
 
     std::cerr << "missing case for Operator in operator_to_string";
@@ -168,6 +170,11 @@ StringLiteralExpression* Expression::as_string_literal() {
 BooleanLiteralExpression* Expression::as_boolean_literal() {
     assert(type == ExpressionType::BooleanLiteral);
     return as<BooleanLiteralExpression>();
+}
+
+NullLiteralExpression* Expression::as_null_literal() {
+    assert(type == ExpressionType::NullLiteral);
+    return as<NullLiteralExpression>();
 }
 
 ArrayExpression* Expression::as_array() {
@@ -426,6 +433,12 @@ nlohmann::json BooleanLiteralExpression::to_json() {
     nlohmann::json j;
     j["type"] = "BooleanLiteralExpression";
     j["value"] = value;
+    return j;
+}
+
+nlohmann::json NullLiteralExpression::to_json() {
+    nlohmann::json j;
+    j["type"] = "NullLiteralExpression";
     return j;
 }
 

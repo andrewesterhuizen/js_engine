@@ -279,6 +279,9 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
         case ast::ExpressionType::BooleanLiteral: {
             return om.new_boolean(expression->as_boolean_literal()->value);
         }
+        case ast::ExpressionType::NullLiteral: {
+            return om.new_null();
+        }
         case ast::ExpressionType::Object: {
             auto e = expression->as_object();
             auto object = om.new_object();
@@ -411,7 +414,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                         case ast::Operator::DivisionAssignment:
                         case ast::Operator::Increment:
                         case ast::Operator::Decrement:
-                        case ast::Operator::Not: {
+                        case ast::Operator::Not:
+                        case ast::Operator::Typeof: {
                             assert(false);
                         }
                     }
@@ -432,6 +436,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 case object::Value::Type::Array:
                 case object::Value::Type::Function:
                 case object::Value::Type::Undefined:
+                case object::Value::Type::Null:
                 case object::Value::Type::Boolean: {
                     switch (e->op) {
                         case ast::Operator::EqualTo: {
@@ -482,7 +487,8 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                         case ast::Operator::Increment:
                         case ast::Operator::Decrement:
                         case ast::Operator::Exponentiation:
-                        case ast::Operator::Not: {
+                        case ast::Operator::Not:
+                        case ast::Operator::Typeof: {
                             assert(false);
                         }
                     }
@@ -493,7 +499,17 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
         }
         case ast::ExpressionType::Unary: {
             auto e = expression->as_unary();
-            return om.new_boolean(!execute(e->argument)->is_truthy());
+            switch (e->op) {
+                case ast::Operator::Not:
+                    return om.new_boolean(!execute(e->argument)->is_truthy());
+                case ast::Operator::Typeof: {
+                    auto result = execute(e->argument);
+                    return om.new_string(result->type_of());
+                }
+                default:
+                    assert(false);
+            }
+
         }
         case ast::ExpressionType::Update: {
             auto e = expression->as_update();
@@ -628,6 +644,8 @@ void Interpreter::create_builtin_objects() {
     object_prototype->register_native_method(om, "toString", [&](object::Value* value, std::vector<object::Value*>) {
         return om.new_string(value->to_string());
     });
+
+    global->set_property("undefined", om.new_undefined());
 
     // built in functions
     global->register_native_method(om, "parseInt", [&](object::Value*, std::vector<object::Value*> args) {

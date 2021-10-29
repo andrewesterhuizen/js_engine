@@ -110,6 +110,7 @@ class Lexer {
                                        "instanceof|"
                                        "let|"
                                        "new|"
+                                       "null|"
                                        "return|"
                                        "super|"
                                        "switch|"

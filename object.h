@@ -42,6 +42,7 @@ struct Value {
         Number,
         String,
         Boolean,
+        Null,
         Undefined
     };
 
@@ -111,6 +112,8 @@ struct Value {
                 return std::get<bool>(value);
             case Type::Undefined:
                 return "undefined";
+            case Type::Null:
+                return "null";
         }
     }
 
@@ -148,6 +151,7 @@ struct Value {
             case Type::String:
             case Type::Boolean:
             case Type::Undefined:
+            case Type::Null:
                 return to_json().dump(4);
         }
     }
@@ -165,12 +169,33 @@ struct Value {
             case Type::Boolean:
                 return std::get<bool>(value);
             case Type::Undefined:
+            case Type::Null:
                 return false;
         }
     }
 
     bool is_undefined() {
         return type == Type::Undefined;
+    }
+
+    std::string type_of() {
+        switch (type) {
+            case Type::Function:
+                return "function";
+            case Type::Object:
+            case Type::Array:
+                return "object";
+            case Type::Number:
+                return "number";
+            case Type::String:
+                return "string";
+            case Type::Boolean:
+                return "boolean";
+            case Type::Null:
+                return "object";
+            case Type::Undefined:
+                return "undefined";
+        }
     }
 
     std::optional<Value*> get_property(ObjectManager &object_manager, std::string name);
@@ -188,6 +213,7 @@ public:
     static Value* number(ObjectManager &om, Value* value, double v);
     static Value* string(ObjectManager &om, Value* value, std::string v);
     static Value* boolean(ObjectManager &om, Value* value, bool v);
+    static Value* null(ObjectManager &om, Value* value);
     static Value* array(ObjectManager &om, Value* value, std::optional<int> length);
     static Value* array(ObjectManager &om, Value* value, std::vector<Value*> v, std::optional<int> length);
     static Value* object(ObjectManager &om, Value* value);
@@ -303,6 +329,9 @@ public:
     }
     Value* new_boolean(bool value) {
         return ValueFactory::boolean(*this, allocate<Value>(), value);
+    }
+    Value* new_null() {
+        return ValueFactory::null(*this, allocate<Value>());
     }
     Value* new_undefined() {
         return ValueFactory::undefined(*this, allocate<Value>());

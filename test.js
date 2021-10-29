@@ -1,6 +1,4 @@
-var a = [1, 2, 3, 4];
-var b = Array.from(a);
-console.log(b);
+console.log(typeof 1);
 
-var c = Array.from(a, (x) => x + 1);
-console.log(c);
+console.log(undefined);
+console.log(null);

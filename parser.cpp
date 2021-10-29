@@ -407,6 +407,15 @@ std::shared_ptr<ast::Expression> Parser::parse_expression(std::shared_ptr<ast::E
                     return parse_new_expression();
                 }
 
+                if (t.value == "typeof") {
+                    next_token();
+                    return std::make_shared<ast::UnaryExpression>(parse_expression(nullptr), ast::Operator::Typeof);
+                }
+
+                if (t.value == "null") {
+                    return parse_expression(std::make_shared<ast::NullLiteralExpression>());
+                }
+
                 unexpected_token();
                 assert(false);
             }
@@ -586,6 +595,10 @@ std::shared_ptr<ast::Statement> Parser::parse_statement() {
                 auto catch_body = parse_statement();
 
                 auto s = std::make_shared<ast::TryCatchStatement>(try_body, catch_identifier.value, catch_body);
+                skip_token_if_type(lexer::TokenType::Semicolon);
+                return s;
+            } else if (t.value == "typeof") {
+                auto s = std::make_shared<ast::ExpressionStatement>(parse_expression(nullptr));
                 skip_token_if_type(lexer::TokenType::Semicolon);
                 return s;
             }

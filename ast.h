@@ -33,7 +33,8 @@ namespace ast {
     MAP(GreaterThanOrEqualTo) \
     MAP(LessThan) \
     MAP(LessThanOrEqualTo)  \
-    MAP(Not)
+    MAP(Not)           \
+    MAP(Typeof)
 
 #define CREATE_ENUM(NAME) NAME,
 
@@ -60,7 +61,8 @@ VariableType get_variable_type(std::string type);
     MAP(Identifier) \
     MAP(NumberLiteral) \
     MAP(StringLiteral) \
-    MAP(BooleanLiteral) \
+    MAP(BooleanLiteral)  \
+    MAP(NullLiteral) \
     MAP(Binary) \
     MAP(Assignment) \
     MAP(Object) \
@@ -142,6 +144,7 @@ struct Expression : ASTNode {
     NumberLiteralExpression* as_number_literal();
     StringLiteralExpression* as_string_literal();
     BooleanLiteralExpression* as_boolean_literal();
+    NullLiteralExpression* as_null_literal();
     ArrayExpression* as_array();
     ObjectExpression* as_object();
     FunctionExpression* as_function();
@@ -291,6 +294,11 @@ struct StringLiteralExpression : public Expression {
 struct BooleanLiteralExpression : public Expression {
     BooleanLiteralExpression(bool value) : Expression(ExpressionType::BooleanLiteral), value(value) {}
     bool value;
+    nlohmann::json to_json() override;
+};
+
+struct NullLiteralExpression : public Expression {
+    NullLiteralExpression() : Expression(ExpressionType::NullLiteral) {}
     nlohmann::json to_json() override;
 };
 
