@@ -14,6 +14,31 @@ section("array", (test) => {
     }
   });
 
+  test("Array.from returns new array with copy of elements", () => {
+    var a = [1, 2, 3, 4];
+    var b = Array.from(a);
+
+    for (var i = 0; i < a.length; i++) {
+      assert(
+        a[i] === b[i],
+        "expected: " + a[i] + ", got: " + b[i] + ", at position " + i
+      );
+    }
+  });
+
+  test("Array.from execute map function", () => {
+    var a = [1, 2, 3, 4];
+    var b = Array.from(a, (x) => x + 1);
+
+    for (var i = 0; i < a.length; i++) {
+      var expected = a[i] + 1;
+      assert(
+        expected === b[i],
+        "expected: " + expected + ", got: " + b[i] + ", at position " + i
+      );
+    }
+  });
+
   test("array length returns expexted length", () => {
     var a = [1, 2, 3, 4];
     assert(a.length === 4, "expected array length to be 4 and got " + a.length);

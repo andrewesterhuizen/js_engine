@@ -332,7 +332,7 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                 case object::Value::Type::Number: {
                     switch (e->op) {
                         case ast::Operator::Plus: {
-                            if(right_result->type == object::Value::Type::String) {
+                            if (right_result->type == object::Value::Type::String) {
                                 return om.new_string(left_result->to_string() + right_result->string());
                             }
 
@@ -360,12 +360,19 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                             return om.new_number(std::powf(left_result->number(), right_result->number()));
                         }
                         case ast::Operator::EqualTo: {
-                            assert(right_result->type == object::Value::Type::Number);
-                            return om.new_boolean(left_result->number() == right_result->number());
+                            if (right_result->type == object::Value::Type::Number) {
+                                return om.new_boolean(left_result->number() == right_result->number());
+                            }
+
+                            // TODO: this should attempt conversion to number for non number values
+                            return om.new_boolean(false);
                         }
                         case ast::Operator::EqualToStrict: {
-                            assert(right_result->type == object::Value::Type::Number);
-                            return om.new_boolean(left_result->number() == right_result->number());
+                            if (right_result->type == object::Value::Type::Number) {
+                                return om.new_boolean(left_result->number() == right_result->number());
+                            }
+
+                            return om.new_boolean(false);
                         }
                         case ast::Operator::And: {
                             return om.new_boolean(left_result->is_truthy() && right_result->is_truthy());
@@ -458,6 +465,11 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Expression> expression)
                             return om.new_boolean(left_result->is_truthy() <= right_result->is_truthy());
                         }
                         case ast::Operator::Plus:
+                            if (right_result->type == object::Value::Type::String) {
+                                return om.new_string(left_result->to_string() + right_result->string());
+                            }
+
+                            return om.new_string(left_result->to_string() + right_result->to_string());
                         case ast::Operator::Minus:
                         case ast::Operator::Multiply:
                         case ast::Operator::Divide:
@@ -693,6 +705,31 @@ void Interpreter::create_builtin_objects() {
         return context;
     });
 
+    Array->register_native_method(om, "from", [&](object::Value* context, std::vector<object::Value*> args) {
+        if (args.size() == 0 || args[0]->type != object::Value::Type::Array) {
+            throw_error("TypeError", args[0]->to_string() + " is not iterable");
+        }
+
+        std::optional<object::Value*> map_func;
+        if (args.size() > 1) {
+            map_func = args[1];
+        }
+
+        auto old_array = args[0]->array();
+        auto new_array = om.new_array();
+
+        for (auto &el: old_array->elements) {
+            if (map_func.has_value()) {
+                auto mapped = call_function(context, map_func.value(), {el});
+                new_array->array()->elements.push_back(mapped);
+            } else {
+                new_array->array()->elements.push_back(el);
+            }
+        }
+
+        return new_array;
+    });
+
     Array->register_native_method(om, "push", [&](object::Value* context, std::vector<object::Value*> args) {
         auto array = context->array();
 
@@ -803,15 +840,19 @@ void Interpreter::create_builtin_objects() {
     };
     error_constructor_prototype.value()->register_native_method(om, "toString", error_constructor_to_string_handler);
 
-    auto reference_error_constructor_handler = [&](object::Value* context, std::vector<object::Value*> args) {
-        context->set_property("message", args[0]);
-        context->set_property("name", om.new_string("ReferenceError"));
-        return context;
-    };
 
-    auto reference_error_constructor = global->register_native_method(om, "ReferenceError",
-                                                                      reference_error_constructor_handler);
-    reference_error_constructor->set_property("prototype", error_constructor_prototype.value());
+    std::vector<std::string> builtin_error_names{"ReferenceError", "TypeError"};
+
+    for (auto name: builtin_error_names) {
+        auto handler = [&](object::Value* context, std::vector<object::Value*> args) {
+            context->set_property("message", args[0]);
+            context->set_property("name", om.new_string(name));
+            return context;
+        };
+
+        auto reference_error_constructor = global->register_native_method(om, name, handler);
+        reference_error_constructor->set_property("prototype", error_constructor_prototype.value());
+    }
 }
 
 Interpreter::Interpreter() {

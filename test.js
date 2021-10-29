@@ -1,6 +1,6 @@
-var a = new Array(5);
-console.log(a.length);
-console.log(a);
-a.fill(123);
-console.log(a);
+var a = [1, 2, 3, 4];
+var b = Array.from(a);
+console.log(b);
 
+var c = Array.from(a, (x) => x + 1);
+console.log(c);
