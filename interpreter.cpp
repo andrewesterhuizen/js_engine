@@ -58,14 +58,10 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
             return om.new_undefined();
         }
         case ast::StatementType::Block: {
-            auto s = statement->as_block();
-            object::Value* final_value = nullptr;
+            auto block = statement->as_block();
 
-            for (auto s: s->body) {
-                final_value = execute(s);
-                if (s->type == ast::StatementType::Return) {
-                    return final_value != nullptr ? final_value : om.new_undefined();
-                }
+            for (auto s: block->body) {
+                execute(s);
             }
 
             return om.new_undefined();
@@ -83,11 +79,13 @@ object::Value* Interpreter::execute(std::shared_ptr<ast::Statement> statement) {
         }
         case ast::StatementType::Return: {
             auto s = statement->as_return();
+
             if (s->argument == nullptr) {
-                return om.new_undefined();
+                throw Return{om.new_undefined()};
             }
 
-            return execute(s->argument);
+            auto value = execute(s->argument);
+            throw Return{value};
         }
     }
 
@@ -526,7 +524,13 @@ Interpreter::call_function(object::Value* context, object::Value* func_value, st
         set_variable(func->parameters[i], value);
     }
 
-    auto return_value = execute(func->body);
+    auto return_value = om.new_undefined();
+
+    try {
+        execute(func->body);
+    } catch (Return ret) {
+        return_value = ret.value;
+    }
 
     om.pop_scope();
 

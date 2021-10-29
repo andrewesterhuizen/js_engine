@@ -9,6 +9,10 @@
 namespace interpreter {
 
 class Interpreter {
+    struct Return {
+        object::Value* value;
+    };
+
     object::ObjectManager om;
 
     object::Value* get_variable(std::string name);
